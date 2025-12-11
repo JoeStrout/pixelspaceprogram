@@ -1,0 +1,353 @@
+import "importUtil"
+ensureImport "mathUtil"
+ensureImport "listUtil"
+ensureImport "Rect"
+
+list.minus = function(other)
+	return [self[0] - other[0], self[1] - other[1]]
+end function
+
+folder = file.parent(_sourceFile)
+snapSound = file.loadSound(folder + "/snap3.wav")
+unsnapSound = file.loadSound(folder + "/pop.wav")
+
+// Component: a single, indivisible ship part.  Each component has one or
+// more attachment points by which it can attach to other components in an assembly.
+Component = {}
+Component.pos = null          // x,y position on screen
+Component.attachPoints = null // list of AttachPoint
+Component.sprite = null       // Sprite representing this component
+
+Component.boundsRect = function
+	w = self.sprite.localBounds.width
+	h = self.sprite.localBounds.height
+	return Rect.MakeLTWH(self.pos[0] - w/2, self.pos[1] - h/2, w, h)
+end function
+
+Component.Make = function(image)
+	noob = new self
+	noob.pos = [480,320]
+	noob.attachPoints = []
+	noob.sprite = new Sprite
+	noob.sprite.image = image
+	noob.sprite.localBounds = new Bounds
+	noob.sprite.localBounds.width = image.width
+	noob.sprite.localBounds.height = image.height
+	return noob
+end function
+
+Component.update = function
+	x = self.pos[0]; y = self.pos[1]
+	self.sprite.x = x; self.sprite.y = y
+	for pt in self.attachPoints
+		pt.sprite.x = x + pt.localPos[0]
+		pt.sprite.y = y + pt.localPos[1]
+	end for
+end function
+
+Component.addToDisplay = function(disp)
+	disp.sprites.push self.sprite
+	for pt in self.attachPoints
+		disp.sprites.push pt.sprite
+	end for
+end function
+
+Component.contains = function(xy)
+	return self.sprite.contains(xy)
+end function
+
+Dir = {"E":0, "N":1, "W":2, "S":3}
+Size = {"TINY":0, "SMALL":1, "LARGE":2, "HUGE":3}
+
+// AttachPoint: a place on a component that can attach to other components, at
+// a compatible AttachPoint.  To be compatible, it must be of the same size and
+// opposite orientation.
+AttachPoint = {}
+AttachPoint.localPos = null  // [x, y] relative to owning component
+AttachPoint.orientation = 0  // 0=East, 1=North, 2=West, 3=South
+AttachPoint.size = 1         // 0=tiny, 1=small, 2=large, 3=huge
+AttachPoint.attached = null  // other Component attached at this point
+AttachPoint.sprite = null    // Sprite representing this point
+
+AttachPoint.srcImages = [
+	file.loadImage(folder + "/attachPointA.png"),
+	file.loadImage(folder + "/attachPointB.png") ]
+
+AttachPoint.Make = function(localPos, orientation=0, size=1)
+	noob = new self
+	noob.localPos = localPos
+	noob.orientation = orientation
+	noob.size = size
+	noob.sprite = new Sprite
+	noob.sprite.image = self.srcImages[orientation > 1]
+	// ToDo: replace scaling with separate, pixel-perfect images for each size
+	noob.sprite.scale = [0.25, 0.5, 0.75, 1][size]
+	noob.sprite.rotation = 90 * orientation
+	noob.sprite.tint = "#AAAAFF"
+	return noob
+end function
+
+AttachPoint.compatibleWith = function(other)
+	return other.size == self.size and 
+	   (other.orientation + 2) % 4 == self.orientation
+end function
+
+// Assembly: a collection of one or more components.
+Assembly = {}
+Assembly.components = null   // list of Components in this assembly
+Assembly.boundsRect = null   // total Rect containing all components
+Assembly.snappingTo = null   // assembly we're snapping to while dragging
+
+Assembly.Make = function
+	noob = new self
+	noob.components = []
+	return noob
+end function
+
+Assembly.pos = function; return self.components[0].pos; end function
+
+Assembly.updateBounds = function
+	self.boundsRect = self.components[0].boundsRect
+	for i in range(1, self.components.len-1, 1)
+		self.boundsRect = self.boundsRect.union(self.components[i].boundsRect)
+	end for
+end function
+
+Assembly.contains = function(xy)
+	for comp in self.components
+		if comp.contains(xy) then return true
+	end for
+	return false
+end function
+
+Assembly.moveTo = function(xy, allowSnap=true)
+	dpos = xy.minus(self.pos)
+	// Limit movement to keep the assembly mostly in view
+	b = self.boundsRect
+	if b.centerX + dpos[0] < 0 then
+		dpos[0] = -b.centerX
+	else if b.centerX + dpos[0] > 960 then
+		dpos[0] = 960 - b.centerX
+	end if
+	
+	// Then, see if we can snap to anything with this dpos
+	wasSnapped = (self.snappingTo != null)
+	isSnapped = Manager.snapAssembly(self, dpos)
+	if isSnapped and not wasSnapped then
+		snapSound.play
+	else if wasSnapped and not isSnapped then
+		unsnapSound.play
+	end if
+	
+	// Then update all components, and our own boundsRect
+	for comp in self.components
+		comp.pos.add dpos
+		comp.update
+	end for
+	self.updateBounds
+end function
+
+Assembly.ownerOf = function(attachPoint)
+	// Return the Component in our assembly that owns the given AttachPoint.
+	for comp in self.components
+		if comp.attachPoints.contains(attachPoint) then return comp
+	end for
+	return null
+end function
+
+Assembly.allOpenAttachPoints = function
+	// Return a list of all the open attachment points on this assembly,
+	// with current worldPos filled in.
+	result = []
+	for comp in self.components
+		for pt in comp.attachPoints
+			if pt.attached then continue
+			pt.worldPos = comp.pos.plus(pt.localPos)
+			result.push pt
+		end for
+	end for
+	return result
+end function
+
+Assembly.trySnapTo = function(other, dpos)
+	// If this assembly is moved by dpos, can it snap to the given
+	// other assembly?  If so, adjust dpos so it fits exactly and
+	// return true.  Otherwise, return false.
+	myPts = self.allOpenAttachPoints
+	otherPts = other.allOpenAttachPoints
+	for myPt in myPts
+		myPt.worldPos.add dpos  // adjust for the new position!
+		for otherPt in otherPts
+			if not myPt.compatibleWith(otherPt) then continue
+			dist = mathUtil.distance(myPt.worldPos, otherPt.worldPos)
+			if dist > 10 then continue
+			// Found an attachment that works!
+			dpos.add otherPt.worldPos.minus(myPt.worldPos)
+			return true
+		end for
+	end for
+	return false
+end function
+
+Assembly.attach = function(other)
+	// Find all overlapping compatible attachment points between
+	// this assembly and the other one, and hook them up.  Then
+	// incorporate our components into the other assembly.  This
+	// assembly is then ready to be deleted.  Return true if
+	// successful, false if no attachment was done.
+	success = false
+	myPts = self.allOpenAttachPoints
+	otherPts = other.allOpenAttachPoints
+	for myPt in myPts
+		for otherPt in otherPts
+			if not myPt.compatibleWith(otherPt) then continue
+			dist = mathUtil.distance(myPt.worldPos, otherPt.worldPos)
+			if dist > 1 then continue
+			// Found an attachment that works -- hook it up!
+			myPt.attached = other.ownerOf(otherPt)
+			otherPt.attached = self.ownerOf(myPt)
+			success = true
+			break
+		end for
+	end for
+	if not success then return false
+	
+	// Attachment points connected; now combine components.
+	other.components = other.components + self.components
+	self.components = []
+	return true
+end function
+
+Assembly.update = function
+	for comp in self.components
+		comp.update
+	end for
+end function
+
+State = {}
+State.IDLE = "IDLE"
+State.MOUSEDOWN = "MOUSEDOWN"
+State.DRAGGING = "DRAGGING"
+
+Manager = {}
+Manager.state = ""
+Manager.stateStartTime = 0
+Manager.assemblies = []
+Manager.hitAssem = null  // Assembly currently being clicked or dragged
+Manager.hitDelta = [0,0] // hitAssem pos - mouse pos
+
+Manager.assemblyAtXY = function(xy)
+	result = null
+	for assm in self.assemblies
+		if assm.contains(xy) then result = assm
+	end for
+	return result
+end function
+
+Manager.snapAssembly = function(assem, dpos)
+	// If we move the given assembly by dpos, will it be close enough
+	// to snap to something?  If so, adjust dpos so it fits exactly.
+	// Return true if snapped, false otherwise.
+	for other in self.assemblies
+		if other == assem then continue
+		if assem.trySnapTo(other, dpos) then
+			assem.snappingTo = other
+			return true
+		end if
+	end for
+	assem.snappingTo = null
+	return false
+end function
+
+Manager.timeInState = function; return time - self.stateStartTime; end function
+
+Manager.enterState = function(newState)
+	if newState == self.state then return
+	self.exitState newState
+	
+	if newState == State.MOUSEDOWN then
+		self.mouseDownPos = [mouse.x, mouse.y]
+		if self.hitAssem then self.hitDelta = self.hitAssem.pos.minus(self.mouseDownPos)
+	end if
+	
+	self.state = newState
+	self.stateStartTime = time
+	text.row = 0; text.column = 20; text.color = color.gray
+	print "State: " + self.state + " " *20, ""
+end function
+
+Manager.exitState = function(toNewState)
+	if self.state == State.DRAGGING then
+		if self.hitAssem.snappingTo and self.hitAssem.attach(self.hitAssem.snappingTo) then
+			// The hit assembly has been merged into the other one.
+			// So now we can forget it.
+			self.assemblies.removeVal self.hitAssem
+		end if
+		self.hitAssem = null
+	end if
+end function
+
+Manager.updateState = function
+	if self.state == State.IDLE then
+		if mouse.button then
+			self.hitAssem = self.assemblyAtXY(mouse)
+			if self.hitAssem then self.enterState State.MOUSEDOWN
+		end if
+	else if self.state == State.MOUSEDOWN then
+		if not mouse.button then
+			self.enterState State.IDLE
+		else if self.timeInState > 1 then 
+			// Automatically start a drag (rather than selection) on long-press
+			self.enterState State.DRAGGING
+		else if mathUtil.distance(mouse, self.mouseDownPos) > 3 then
+			// Also start a drag if the user starts dragging!
+			self.enterState State.DRAGGING
+		end if
+	else if self.state == State.DRAGGING then
+		if not mouse.button then
+			self.enterState State.IDLE
+		else
+			pos = self.hitDelta.plus([mouse.x, mouse.y])
+			if self.hitAssem.pos != pos then self.hitAssem.moveTo pos
+		end if
+	end if
+end function
+
+main = function
+	clear
+	spriteDisp = display(4)
+	
+	square128 = Image.create(128, 128, color.silver)
+	SquareComp = new Component
+	SquareComp.image = square128
+	SquareComp.Make = function; return super.Make(self.image); end function
+	
+	for i in range(0, 3)
+		comp = SquareComp.Make
+		comp.pos = [round(100+800*rnd), round(100+500*rnd)]
+		comp.attachPoints.push AttachPoint.Make([65, 0],  Dir.E, Size.LARGE)
+		comp.attachPoints.push AttachPoint.Make([-65, 0], Dir.W, Size.LARGE)
+		comp.attachPoints.push AttachPoint.Make([0, 65],  Dir.N, Size.LARGE)
+		comp.attachPoints.push AttachPoint.Make([0, -65], Dir.S, Size.LARGE)
+		comp.addToDisplay spriteDisp
+		assm = Assembly.Make
+		assm.components.push comp
+		assm.update
+		assm.updateBounds
+		Manager.assemblies.push assm
+	end for
+	
+	Manager.enterState State.IDLE
+	
+	while true
+		yield
+		if key.available then
+			k = key.get
+			if k == char(27) then break
+		end if
+		Manager.updateState
+	end while
+	text.color = color.orange
+end function
+
+if locals == globals then main
