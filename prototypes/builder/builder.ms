@@ -10,6 +10,17 @@ end function
 folder = file.parent(_sourceFile)
 snapSound = file.loadSound(folder + "/snap3.wav")
 unsnapSound = file.loadSound(folder + "/pop.wav")
+partSheet = file.loadImage("rocket_parts_sheet.png")
+partImages = []
+h = partSheet.height
+for i in range(0, partSheet.width / h - 1)
+	partImages.push partSheet.getImage(i*h, 0, h, h)
+end for
+
+xyList = function(listOrMap)
+	if listOrMap isa list then return listOrMap[0:2]
+	return [listOrMap.x, listOrMap.y]
+end function
 
 // Component: a single, indivisible ship part.  Each component has one or
 // more attachment points by which it can attach to other components in an assembly.
@@ -21,7 +32,7 @@ Component.sprite = null       // Sprite representing this component
 Component.boundsRect = function
 	w = self.sprite.localBounds.width
 	h = self.sprite.localBounds.height
-	return Rect.MakeLTWH(self.pos[0] - w/2, self.pos[1] - h/2, w, h)
+	return Rect.MakeLBWH(self.pos[0] - w/2, self.pos[1] - h/2, w, h)
 end function
 
 Component.Make = function(image)
@@ -224,11 +235,85 @@ Assembly.update = function
 	end for
 end function
 
+// Palette: a source for new (one-component) Assemblies.
+Palette = {}
+Palette.width = 100
+Palette.wells = []  // list of Rect, with extra `index` (0-5) property
+
+Palette.init = function
+	wellSize = 80
+	iconSize = 64
+	gap = 20
+	x = (self.width - wellSize)/2
+	y = 640 - gap
+	for i in partImages.indexes
+		y -= wellSize
+		r = Rect.MakeLBWH(x, y, wellSize, wellSize)
+		r.index = i
+		self.wells.push r
+		y -= gap
+	end for
+end function
+		
+Palette.draw = function
+	if not self.wells then self.init
+	gfx.fillRect 0, 0, self.width, 640, "#666666"
+	for w in self.wells
+		w.draw "#444444"
+		gfx.drawImage partImages[w.index],
+		   w.centerX - 32, w.centerY - 32, 64, 64, 
+		   0, 0, -1, -1, "#CCCCCC"
+	end for
+end function
+
+Palette.contains = function(xy)
+	if xy isa map then return xy.x < self.width
+	return xy[0] < self.width
+end function
+
+Palette.wellAt = function(xy)
+	for w in self.wells
+		if w.contains(xy) then return w
+	end for
+	return null
+end function
+
+Palette.makeAssemblyAtXY = function(xy)
+	well = self.wellAt(xy)
+	if not well then return null
+	comp = Component.Make(partImages[well.index])
+	comp.pos = xyList(xy)
+
+	hw = comp.sprite.image.width / 2
+	hh = comp.sprite.image.height / 2
+	if 2 <= well.index <= 4 then
+		comp.attachPoints.push AttachPoint.Make([hw, 0],  Dir.E, Size.LARGE)
+	end if
+	if [2, 4].contains(well.index) then
+		comp.attachPoints.push AttachPoint.Make([-hw, 0], Dir.W, Size.LARGE)
+	end if
+	if well.index > 0 then
+		comp.attachPoints.push AttachPoint.Make([0, hh],  Dir.N, Size.LARGE)
+	end if
+	if well.index < 5 then
+		comp.attachPoints.push AttachPoint.Make([0, -hh], Dir.S, Size.LARGE)
+	end if
+
+	comp.addToDisplay spriteDisp
+
+	assm = Assembly.Make
+	assm.components.push comp
+	assm.update
+	assm.updateBounds
+	return assm
+end function
+	
+
+// Manager: runs the whole rocket-assembly process.
 State = {}
 State.IDLE = "IDLE"
 State.MOUSEDOWN = "MOUSEDOWN"
 State.DRAGGING = "DRAGGING"
-
 Manager = {}
 Manager.state = ""
 Manager.stateStartTime = 0
@@ -290,7 +375,12 @@ end function
 Manager.updateState = function
 	if self.state == State.IDLE then
 		if mouse.button then
-			self.hitAssem = self.assemblyAtXY(mouse)
+			if Palette.contains(mouse) then
+				self.hitAssem = Palette.makeAssemblyAtXY(mouse)
+				if self.hitAssem then self.assemblies.push self.hitAssem
+			else
+				self.hitAssem = self.assemblyAtXY(mouse)
+			end if
 			if self.hitAssem then self.enterState State.MOUSEDOWN
 		end if
 	else if self.state == State.MOUSEDOWN then
@@ -315,7 +405,8 @@ end function
 
 main = function
 	clear
-	spriteDisp = display(4)
+	globals.spriteDisp = display(4)
+	Palette.draw
 	
 	square128 = Image.create(128, 128, color.silver)
 	SquareComp = new Component
