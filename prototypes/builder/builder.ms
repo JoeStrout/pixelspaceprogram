@@ -3,9 +3,32 @@ ensureImport "mathUtil"
 ensureImport "listUtil"
 ensureImport "Rect"
 
+// Some list extension methods specifically for [x,y] lists
 list.minus = function(other)
 	return [self[0] - other[0], self[1] - other[1]]
 end function
+
+list.sqrMagnitude = function
+	return self[0]^2 + self[1]^2
+end function
+
+list.magnitude = function
+	return sqrt(self[0]^2 + self[1]^2)
+end function
+
+list.normalize = function
+	m = sqrt(self[0]^2 + self[1]^2)
+	if m != 0 then
+		self[0] /= m
+		self[1] /= m
+	end if
+end function
+
+xyList = function(listOrMap)
+	if listOrMap isa list then return listOrMap[0:2]
+	return [listOrMap.x, listOrMap.y]
+end function
+
 
 folder = file.parent(_sourceFile)
 snapSound = file.loadSound(folder + "/snap3.wav")
@@ -16,11 +39,6 @@ h = partSheet.height
 for i in range(0, partSheet.width / h - 1)
 	partImages.push partSheet.getImage(i*h, 0, h, h)
 end for
-
-xyList = function(listOrMap)
-	if listOrMap isa list then return listOrMap[0:2]
-	return [listOrMap.x, listOrMap.y]
-end function
 
 // Component: a single, indivisible ship part.  Each component has one or
 // more attachment points by which it can attach to other components in an assembly.
@@ -65,6 +83,13 @@ end function
 
 Component.contains = function(xy)
 	return self.sprite.contains(xy)
+end function
+
+Component.breakAttachment = function(toOther)
+	for atch in self.attachPoints
+		if atch.attached == toOther then atch.attached = null
+	end for
+	// Note: it's up to the caller to do the reverse call, too.
 end function
 
 Dir = {"E":0, "N":1, "W":2, "S":3}
@@ -124,11 +149,15 @@ Assembly.updateBounds = function
 	end for
 end function
 
-Assembly.contains = function(xy)
+Assembly.componentAt = function(xy)
 	for comp in self.components
-		if comp.contains(xy) then return true
+		if comp.contains(xy) then return comp
 	end for
-	return false
+	return null
+end function
+
+Assembly.contains = function(xy)
+	return self.componentAt(xy) != null
 end function
 
 Assembly.moveTo = function(xy, allowSnap=true)
@@ -145,9 +174,9 @@ Assembly.moveTo = function(xy, allowSnap=true)
 	wasSnapped = (self.snappingTo != null)
 	isSnapped = Manager.snapAssembly(self, dpos)
 	if isSnapped and not wasSnapped then
-		snapSound.play
+		if not snapSound.isPlaying then snapSound.play
 	else if wasSnapped and not isSnapped then
-		unsnapSound.play
+		if not unsnapSound.isPlaying then unsnapSound.play
 	end if
 	
 	// Then update all components, and our own boundsRect
@@ -227,6 +256,56 @@ Assembly.attach = function(other)
 	other.components = other.components + self.components
 	self.components = []
 	return true
+end function
+
+Assembly.breakAt = function(breakPos, direction)
+	// Find the component at breakPos, and break it (and possibly others
+	// attached to it) from the rest of the assembly at breakPos, in the 
+	// given ([x,y] normalized, orthogonal) direction.
+	breaker = self.componentAt(breakPos)
+	if not breaker then return
+	// Make a list of all components going with the breaker.
+	globals.breaking = [breaker]
+	toDo = [breaker]
+	while toDo
+		comp = toDo.pull
+		for atch in comp.attachPoints
+			otherComp = atch.attached
+			if not otherComp or breaking.contains(otherComp) then continue
+			pos = atch.localPos.plus(comp.pos)
+			if direction[0] > 0 then shouldBreak = pos[0] > breakPos[0]
+			if direction[0] < 0 then shouldBreak = pos[0] < breakPos[0]
+			if direction[1] > 0 then shouldBreak = pos[1] > breakPos[1]
+			if direction[1] < 0 then shouldBreak = pos[1] < breakPos[1]
+			if shouldBreak then
+				// Keep this attachment point intact, and recurse on the other component
+				breaking.push otherComp
+				toDo.push otherComp
+			else
+				// Break this attachment point.
+				comp.breakAttachment otherComp
+				otherComp.breakAttachment comp
+			end if
+		end for
+	end while
+	// Now, keep the breakers here, and move all other components
+	// to a new Assembly.
+	noob = Assembly.Make
+	for i in range(self.components.len-1, 0, -1)
+		comp = self.components[i]
+		if not breaking.contains(comp) then
+			noob.components.push comp
+			self.components.remove i
+		end if
+	end for
+	if not noob.components then return // Nothing to actually break
+	unsnapSound.play
+	noob.update
+	noob.updateBounds
+	Manager.assemblies.push noob
+	self.update
+	self.updateBounds
+	self.snappingTo = null
 end function
 
 Assembly.update = function
@@ -353,6 +432,14 @@ Manager.enterState = function(newState)
 	if newState == State.MOUSEDOWN then
 		self.mouseDownPos = [mouse.x, mouse.y]
 		if self.hitAssem then self.hitDelta = self.hitAssem.pos.minus(self.mouseDownPos)
+	else if newState == State.DRAGGING then
+		if self.hitAssem and (key.pressed("left alt") or key.pressed("right alt")) then
+			delta = [mouse.x, mouse.y].minus(self.mouseDownPos)
+			if abs(delta[0]) > abs(delta[1]) then delta[1] = 0 else delta[0] = 0
+			delta.normalize
+			self.hitAssem.breakAt self.mouseDownPos, delta
+			self.hitDelta = self.hitAssem.pos.minus(self.mouseDownPos)
+		end if
 	end if
 	
 	self.state = newState
