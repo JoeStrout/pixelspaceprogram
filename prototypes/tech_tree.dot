@@ -5,32 +5,35 @@ digraph {
 	edge [arrowsize=0.8 color=darkblue]
 	"Basic Materials" [label=<<B>Basic Materials</B>> fillcolor=lightblue]
 	"Solid Propulsion" [label=<<B>Solid Propulsion</B><BR/><FONT POINT-SIZE="9"><BR/>  • Ruckus (Small)</FONT>> fillcolor=lightblue]
-	"Aerodynamics I" [label=<<B>Aerodynamics I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Small Fin ()<BR/>  • Small Nosecone (Small)</FONT>> fillcolor=lightblue]
+	"Aerodynamics I" [label=<<B>Aerodynamics I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Small Fin<BR/>  • Small Nosecone (Small)</FONT>> fillcolor=lightblue]
 	"Liquid Propulsion I" [label=<<B>Liquid Propulsion I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Nudge (Small)</FONT>> fillcolor=lightblue]
 	"Fuel Storage I" [label=<<B>Fuel Storage I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Teacup (Small)<BR/>  • Kettle (Small)</FONT>> fillcolor=lightblue]
 	"Control I" [label=<<B>Control I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Probe Core Mk1 (Small)<BR/>  • Capsule Mk1 (Small)</FONT>> fillcolor=lightblue]
 	"Structural Systems I" [label=<<B>Structural Systems I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Decoupler S (Small)<BR/>  • Side Decoupler (Small)</FONT>> fillcolor=lightblue]
-	"Advanced Aerodynamics" [label=<<B>Advanced Aerodynamics</B><BR/><FONT POINT-SIZE="9"><BR/>  • Big Fin ()<BR/>  • Grid Fin ()</FONT>> fillcolor=lightblue]
-	"Recovery Systems" [label=<<B>Recovery Systems</B><BR/><FONT POINT-SIZE="9"><BR/>  • Parachutes ()</FONT>> fillcolor=lightblue]
+	"Advanced Aerodynamics" [label=<<B>Advanced Aerodynamics</B><BR/><FONT POINT-SIZE="9"><BR/>  • Big Fin<BR/>  • Grid Fin</FONT>> fillcolor=lightblue]
+	"Recovery Systems" [label=<<B>Recovery Systems</B><BR/><FONT POINT-SIZE="9"><BR/>  • Parachutes</FONT>> fillcolor=lightblue]
 	"Guidance I" [label=<<B>Guidance I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Capsule Mk2 (Large)<BR/>  • Reaction Wheel S (Small)</FONT>> fillcolor=lightblue]
-	"Science I" [label=<<B>Science I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Thermometer ()<BR/>  • Pressure Sensor ()<BR/>  • Geiger Counter ()</FONT>> fillcolor=lightblue]
+	"Science I" [label=<<B>Science I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Thermometer<BR/>  • Pressure Sensor<BR/>  • Geiger Counter</FONT>> fillcolor=lightblue]
 	"Large Diameter Systems" [label=<<B>Large Diameter Systems</B><BR/><FONT POINT-SIZE="9"><BR/>  • Passenger Capsule (Large)<BR/>  • Decoupler L (Large)<BR/>  • Adapter S→L (Large)<BR/>  • Instrument Bay (Large)<BR/>  • Large Nosecone (Large)</FONT>> fillcolor=lightblue]
 	"Advanced Structures" [label=<<B>Advanced Structures</B><BR/><FONT POINT-SIZE="9"><BR/>  • Adapter S→2S (Small)<BR/>  • Adapter S→3S (Small)</FONT>> fillcolor=lightblue]
 	"Liquid Propulsion II" [label=<<B>Liquid Propulsion II</B><BR/><FONT POINT-SIZE="9"><BR/>  • Heft (Large)<BR/>  • Fling (Large)</FONT>> fillcolor=lightblue]
 	"Fuel Storage II" [label=<<B>Fuel Storage II</B><BR/><FONT POINT-SIZE="9"><BR/>  • Barrel (Large)<BR/>  • Vat (Large)</FONT>> fillcolor=lightblue]
 	Fairings [label=<<B>Fairings</B><BR/><FONT POINT-SIZE="9"><BR/>  • Fairing S (Small)<BR/>  • Fairing L (Large)</FONT>> fillcolor=lightblue]
-	"Power Systems I" [label=<<B>Power Systems I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Battery Pack ()<BR/>  • Solar Panel ()</FONT>> fillcolor=lightblue]
+	"Power Systems I" [label=<<B>Power Systems I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Battery Pack<BR/>  • Solar Panel</FONT>> fillcolor=lightblue]
 	"Guidance II" [label=<<B>Guidance II</B><BR/><FONT POINT-SIZE="9"><BR/>  • Reaction Wheel L (Large)</FONT>> fillcolor=lightblue]
-	"Science II" [label=<<B>Science II</B><BR/><FONT POINT-SIZE="9"><BR/>  • Camera ()<BR/>  • Spectrometer ()<BR/>  • Magnetometer ()<BR/>  • Data Recorder ()</FONT>> fillcolor=lightblue]
+	"Science II" [label=<<B>Science II</B><BR/><FONT POINT-SIZE="9"><BR/>  • Camera<BR/>  • Spectrometer<BR/>  • Magnetometer<BR/>  • Data Recorder</FONT>> fillcolor=lightblue]
 	"Huge Diameter Systems" [label=<<B>Huge Diameter Systems</B><BR/><FONT POINT-SIZE="9"><BR/>  • Decoupler H (Huge)<BR/>  • Adapter L→H (Huge)<BR/>  • Fairing H (Huge)<BR/>  • Huge Nosecone (Huge)</FONT>> fillcolor=lightblue]
 	"Vacuum Engines" [label=<<B>Vacuum Engines</B><BR/><FONT POINT-SIZE="9"><BR/>  • Drift (Small)</FONT>> fillcolor=lightblue]
 	"Fuel Storage III" [label=<<B>Fuel Storage III</B><BR/><FONT POINT-SIZE="9"><BR/>  • Tank (Huge)<BR/>  • Tanker (Huge)</FONT>> fillcolor=lightblue]
 	"High-Thrust Engines" [label=<<B>High-Thrust Engines</B><BR/><FONT POINT-SIZE="9"><BR/>  • Hoist (Large)<BR/>  • Shove (Huge)</FONT>> fillcolor=lightblue]
 	"Efficient Propulsion" [label=<<B>Efficient Propulsion</B>> fillcolor=lightblue]
-	"Power Systems II" [label=<<B>Power Systems II</B><BR/><FONT POINT-SIZE="9"><BR/>  • RTG ()</FONT>> fillcolor=lightblue]
-	"Advanced Science" [label=<<B>Advanced Science</B><BR/><FONT POINT-SIZE="9"><BR/>  • Microgravity Lab ()<BR/>  • Space Telescope ()</FONT>> fillcolor=lightblue]
+	"Power Systems II" [label=<<B>Power Systems II</B><BR/><FONT POINT-SIZE="9"><BR/>  • RTG</FONT>> fillcolor=lightblue]
+	"Advanced Science" [label=<<B>Advanced Science</B><BR/><FONT POINT-SIZE="9"><BR/>  • Microgravity Lab<BR/>  • Space Telescope</FONT>> fillcolor=lightblue]
 	"Super Heavy Lift" [label=<<B>Super Heavy Lift</B><BR/><FONT POINT-SIZE="9"><BR/>  • Heave (Huge)</FONT>> fillcolor=lightblue]
 	"Ion / Electric Propulsion" [label=<<B>Ion / Electric Propulsion</B><BR/><FONT POINT-SIZE="9"><BR/>  • Buzz (Small)</FONT>> fillcolor=lightblue]
+	"Alien Tech I" [label=<<B>Alien Tech I</B><BR/><FONT POINT-SIZE="9"><BR/>  • Gravity Shield I (Large)<BR/>  • Hull Integrity (Small)</FONT>> fillcolor=lightblue]
+	"Alien Tech II" [label=<<B>Alien Tech II</B><BR/><FONT POINT-SIZE="9"><BR/>  • Inertial Compensator<BR/>  • Reactionless Thruster (Small)</FONT>> fillcolor=lightblue]
+	"Alien Tech III" [label=<<B>Alien Tech III</B><BR/><FONT POINT-SIZE="9"><BR/>  • Gravity Shield II (Huge)<BR/>  • Zero-Point Module</FONT>> fillcolor=lightblue]
 	"Solid Propulsion" -> "Liquid Propulsion I"
 	"Basic Materials" -> "Fuel Storage I"
 	"Aerodynamics I" -> "Control I"
@@ -61,4 +64,6 @@ digraph {
 	"High-Thrust Engines" -> "Super Heavy Lift"
 	"Power Systems II" -> "Ion / Electric Propulsion"
 	"Efficient Propulsion" -> "Ion / Electric Propulsion"
+	"Alien Tech I" -> "Alien Tech II"
+	"Alien Tech II" -> "Alien Tech III"
 }

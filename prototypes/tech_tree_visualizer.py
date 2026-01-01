@@ -126,7 +126,9 @@ def create_tech_tree_graph(tech_nodes, unassigned_parts):
             for part in node_data['parts']:
                 part_name = html.escape(part["name"])
                 part_size = html.escape(part["size"]) if part["size"] else ""
-                label += f'<BR/>  • {part_name} ({part_size})'
+                label += f'<BR/>  • {part_name}'
+                if part_size:
+                    label += f" ({part_size})"
             label += '</FONT>'
 
         label = f'<{label}>'
@@ -156,8 +158,10 @@ def create_tech_tree_graph(tech_nodes, unassigned_parts):
             for category in sorted(by_category.keys()):
                 label_parts.append(f'<B>{html.escape(category)}:</B>')
                 for part in by_category[category]:
-                    size_str = f" ({html.escape(part['size'])})" if part['size'] else ""
-                    label_parts.append(f'  • {html.escape(part["name"])}{size_str}')
+                    label = f'  • {html.escape(part["name"])}{size_str}'
+                    if part['size'].trim():
+                        label += f" ({html.escape(part['size'])})"
+                    label_parts.append(label)
 
             label = f'<FONT POINT-SIZE="10">{"<BR/>".join(label_parts)}</FONT>'
             label = f'<{label}>'
