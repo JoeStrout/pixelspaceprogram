@@ -1,5 +1,9 @@
 // Module to draw the planet(s) at any scale.
 
+import "importUtil"
+ensureImport "listUtil"
+import "LookupTable"
+
 // Handy units:
 globals.cm = 0.01
 globals.m = 1
@@ -8,8 +12,15 @@ globals.km = 1000
 // Constants:
 worldRadius = 6000*km
 
+// Terrain shape functions (lookup tables):
+terrain0 = LookupTable.Make([0,0,0.3,0.31,0.4,0.4,0.1,0.1,0.1,-0.2,-0.5,-0.5,-1,-0.2,0])
+terrain1 = LookupTable.Make([0,0,0.1,0.2,0.4,0.8,1,0.8,0.8,0.5,0.2,0,0,-0.5,-1,-0.5,0])
+terrain2 = LookupTable.Make([0,0.1,0.3,0.2,0.1,0,0,0.2,0.1,0.3,0.3,0.3,0.2,0,0])
+terrain3 = LookupTable.Make([0,0,0.4,0.4,1,1,1,1,0.6,0.6,0.6,0.5,0.4,0.3,0.2,0,0])
+
+
 // Main scale control:
-scales = [25*cm, m, 3*m, 10*m, 30*m, 100*m, 300*m, km,
+scales = [10*cm, 25*cm, 50*cm, m, 3*m, 10*m, 30*m, 100*m, 300*m, km,
   3*km, 10*km, 30*km, 100*km, 300*km, 1000*km]
 scaleIdx = 0
 pixelScale = scales[scaleIdx]  // m per pixel
@@ -66,7 +77,39 @@ drawWorld = function(refScreenPos, refWorldPos)
 		  worldRadPix + 25*km / pixelScale, "#AAAAFF"		
 	end if
 	// ground:
-	drawCircle worldCtrPix, worldRadPix, color.green
+	if pixelScale >= 3000 then
+		drawCircle worldCtrPix, worldRadPix, color.green
+	else
+		drawTerrain worldCtrPix
+	end if
+end function
+
+// drawTerrain: draw the visible section of the ground by actually
+// sampling the terrain height along the visible arc, and drawing
+// it as a polygon.
+drawTerrain = function(worldCtrPix)
+	x = worldCtrPix[0]; y = worldCtrPix[1]
+	radRange = getVisibleAngleRange  // angle range, in radians
+	poly = []
+	ang = radRange[0]
+	dang = (radRange[1] - radRange[0]) / 100
+	while ang < radRange[1]
+		r = worldRadiusAtAngle(ang) / pixelScale
+		poly.push [x + r * cos(ang), y + r * sin(ang)]
+		ang += dang
+	end while
+	poly.push [poly[-1][0], 0]
+	poly.push [poly[0][0], 0]
+	gfx.fillPoly poly, color.green
+end function
+
+worldRadiusAtAngle = function(angleInRadians)
+	return worldRadius + 
+	   terrain0.lookup(angleInRadians*10) * 10*km +
+	   terrain1.lookup(angleInRadians*100) * km +
+	   terrain2.lookup(angleInRadians*10000) * 100 +
+	   terrain3.lookup(angleInRadians*100000) * 10 +
+	   terrain3.lookup(angleInRadians*1000001) * 1
 end function
 
 // drawRocket: draw our rocket, at the given screen position
@@ -76,7 +119,7 @@ drawRocket = function(refScreenPos)
 	rocketSprite.x = refScreenPos[0]
 	rocketSprite.y = refScreenPos[1]
 	imgScale = rocketSprite.imageScale / pixelScale
-	if imgScale * rocketImage.height > rocketIcon.height then
+	if pixelScale <= 1 then
 		rocketSprite.scale = imgScale
 		rocketSprite.image = rocketImage
 	else
@@ -301,7 +344,7 @@ end function
 zoomOut = function; zoomToScaleIdx scaleIdx + 1; end function
 zoomIn  = function; zoomToScaleIdx scaleIdx - 1; end function
 
-rocketPos = [0, worldRadius+25]  // position of the rocket in the world, in meters
+rocketPos = [0, worldRadiusAtAngle(pi/2)+25]  // position of the rocket in the world, in meters
 refScreenPos = [480, 200]  // position of the rocket on screen, in pixels
 
 setup = function
@@ -313,6 +356,10 @@ update = function
 	drawWorld refScreenPos, [-rocketPos[0], -rocketPos[1]]
 	drawRocket refScreenPos
 	drawScaleBar
+	
+//	visRange = getVisibleAngleRange
+//	visRangeDeg = visRange.times(180/pi)
+//	text.row = 25; text.column = 40; print visRangeDeg
 end function
 
 runUnitTests = function
@@ -367,6 +414,7 @@ end function
 if locals == globals then
 	runUnitTests
 	setup
+	rocketSprite.rotation = 90
 	while true
 		update
 		k = key.get.code
