@@ -1,0 +1,92 @@
+// This module loads static game definition data, e.g. part definitions
+// and tech tree nodes.  (Don't confuse this with game *state*, which keeps
+// track of the player's progress in a particular playthrough.)
+//
+// Game data may be loaded dynamically from Google Sheets during development;
+// we'll change that to local TSV files when we ship.
+
+import "importUtil"
+ensureImport "tsv"
+
+// Use the URL from the "Publish to Web" feature:
+baseURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRA2AQx4X9PZyyoU5mMV18MdB-OI50dx-AdShkBqMKqSaa8dFhb3USE5vtUF1JlPBjkTZFouuyF3Quj/pub?output=tsv"
+partsListURL = baseURL + "&gid=22599298"
+techTreeURL = baseURL + "&gid=1681045610"
+
+nameToKey = function(s)
+	return s[0].lower + s[1:].replace(" ", "")
+end function
+
+globals.PartDef = {}
+PartDef.MakeFromData = function(data)
+	pd = new self
+	pd.name = data.Name
+	pd.key = nameToKey(pd.name)
+	pd.size = data.Size
+	pd.ispAtm = data["ISP Atm"]
+	pd.ispVac = data["ISP Vac"]
+	pd.thrust = data.Thrust
+	pd.capacity = data.Capacity
+	pd.techNode = data["Tech Node"]
+	pd.anchors = data.Anchors
+	return pd
+end function
+
+PartDef.image = function
+	path = "/usr/pics/parts/" + self.key + ".png"
+	img = file.loadImage(path)
+	if not img then img = Image.create(128, 128, color.silver)
+	self.image = img	// cache for speedy future calls
+	return img
+end function
+
+globals.TechNode = {}
+TechNode.MakeFromData = function(data)
+	td = new self
+	td.name = data.Node
+	td.key = nameToKey(td.name)
+	td.tier = data.Tier
+	td.description = data.Description
+	td.prereqs = data.Prerequisites.split(", ")
+	for i in td.prereqs.indexes
+		td.prereqs[i] = nameToKey(td.prereqs[i])
+	end for
+	return td
+end function
+
+// Fetch the data with a lazy-load strategy
+parts = function
+	data = tsv.parse(http.get(partsListURL))
+	outer.parts = {}
+	for line in data
+		pd = PartDef.MakeFromData(line)
+		parts[pd.key] = pd
+	end for
+	return parts
+end function
+
+techNodes = function
+	data = tsv.parse(http.get(techTreeURL))
+	outer.techNodes = {}
+	for line in data
+		td = TechNode.MakeFromData(line)
+		techNodes[td.key] = td
+	end for
+	return techNodes
+end function
+
+// ...or initialize it all at once:
+init = function
+	parts
+	techNodes
+end function
+
+if locals == globals then
+	init
+	print "Read " + parts.len + " parts, such as: "
+	pprint parts.values[0]
+
+	print "Read " + techNodes.len + " tech nodes, such as: "
+	pprint techNodes.values[0]
+end if
+
