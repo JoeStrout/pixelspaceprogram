@@ -1,0 +1,284 @@
+// This module defines the Component, AttachPoint, and Assembly classes,
+// which together define how a ship is composed of parts.
+
+// Constants
+Dir = {"E":0, "N":1, "W":2, "S":3}
+Size = {"TINY":0, "SMALL":1, "LARGE":2, "HUGE":3}
+
+// Component: a single, indivisible ship part.  Each component has one or
+// more attachment points by which it can attach to other components in an assembly.
+globals.Component = {}
+Component.pos = null          // x,y position on screen
+Component.attachPoints = null // list of AttachPoint
+Component.sprite = null       // Sprite representing this component
+
+Component.boundsRect = function
+	w = self.sprite.localBounds.width
+	h = self.sprite.localBounds.height
+	return Rect.MakeLBWH(self.pos[0] - w/2, self.pos[1] - h/2, w, h)
+end function
+
+Component.Make = function(image)
+	noob = new self
+	noob.pos = [480,320]
+	noob.attachPoints = []
+	noob.sprite = new Sprite
+	noob.sprite.image = image
+	noob.sprite.localBounds = new Bounds
+	noob.sprite.localBounds.width = image.width
+	noob.sprite.localBounds.height = image.height
+	return noob
+end function
+
+Component.update = function
+	x = self.pos[0]; y = self.pos[1]
+	self.sprite.x = x; self.sprite.y = y
+	for pt in self.attachPoints
+		pt.sprite.x = x + pt.localPos[0]
+		pt.sprite.y = y + pt.localPos[1]
+	end for
+end function
+
+Component.addToDisplay = function(disp)
+	disp.sprites.push self.sprite
+	for pt in self.attachPoints
+		disp.sprites.push pt.sprite
+	end for
+end function
+
+Component.contains = function(xy)
+	return self.sprite.contains(xy)
+end function
+
+Component.breakAttachment = function(toOther)
+	for atch in self.attachPoints
+		if atch.attached == toOther then atch.attached = null
+	end for
+	// Note: it's up to the caller to do the reverse call, too.
+end function
+
+// AttachPoint: a place on a component that can attach to other components, at
+// a compatible AttachPoint.  To be compatible, it must be of the same size and
+// opposite orientation.
+globals.AttachPoint = {}
+AttachPoint.localPos = null  // [x, y] relative to owning component
+AttachPoint.orientation = 0  // 0=East, 1=North, 2=West, 3=South
+AttachPoint.size = 1         // 0=tiny, 1=small, 2=large, 3=huge
+AttachPoint.attached = null  // other Component attached at this point
+AttachPoint.sprite = null    // Sprite representing this point
+
+picsFolder = "/usr/pics"
+AttachPoint.srcImages = [
+	file.loadImage(picsFolder + "/attachPointA.png"),
+	file.loadImage(picsFolder + "/attachPointB.png") ]
+
+AttachPoint.Make = function(localPos, orientation=0, size=1)
+	noob = new self
+	noob.localPos = localPos
+	noob.orientation = orientation
+	noob.size = size
+	noob.sprite = new Sprite
+	noob.sprite.image = self.srcImages[orientation > 1]
+	// ToDo: replace scaling with separate, pixel-perfect images for each size
+	noob.sprite.scale = [0.25, 0.5, 0.75, 1][size]
+	noob.sprite.rotation = 90 * orientation
+	noob.sprite.tint = "#AAAAFF"
+	return noob
+end function
+
+AttachPoint.compatibleWith = function(other)
+	return other.size == self.size and 
+	   (other.orientation + 2) % 4 == self.orientation
+end function
+
+// Assembly: a collection of one or more components.
+globals.Assembly = {}
+Assembly.components = null   // list of Components in this assembly
+Assembly.boundsRect = null   // total Rect containing all components
+Assembly.snappingTo = null   // assembly we're snapping to while dragging
+
+Assembly.Make = function
+	noob = new self
+	noob.components = []
+	return noob
+end function
+
+Assembly.pos = function; return self.components[0].pos; end function
+
+Assembly.updateBounds = function
+	self.boundsRect = self.components[0].boundsRect
+	for i in range(1, self.components.len-1, 1)
+		self.boundsRect = self.boundsRect.union(self.components[i].boundsRect)
+	end for
+end function
+
+Assembly.componentAt = function(xy)
+	for comp in self.components
+		if comp.contains(xy) then return comp
+	end for
+	return null
+end function
+
+Assembly.contains = function(xy)
+	return self.componentAt(xy) != null
+end function
+
+Assembly.moveTo = function(xy, allowSnap=true)
+	dpos = xy.minus(self.pos)
+	// Limit movement to keep the assembly mostly in view
+	b = self.boundsRect
+	if b.centerX + dpos[0] < 0 then
+		dpos[0] = -b.centerX
+	else if b.centerX + dpos[0] > 960 then
+		dpos[0] = 960 - b.centerX
+	end if
+	
+	// Then, see if we can snap to anything with this dpos
+	wasSnapped = (self.snappingTo != null)
+	isSnapped = Manager.snapAssembly(self, dpos)
+	if isSnapped and not wasSnapped then
+		if not sounds.snap.isPlaying then sounds.snap.play
+	else if wasSnapped and not isSnapped then
+		if not sounds.pop.isPlaying then sounds.pop.play
+	end if
+	
+	// Then update all components, and our own boundsRect
+	for comp in self.components
+		comp.pos.add dpos
+		comp.update
+	end for
+	self.updateBounds
+end function
+
+Assembly.ownerOf = function(attachPoint)
+	// Return the Component in our assembly that owns the given AttachPoint.
+	for comp in self.components
+		if comp.attachPoints.contains(attachPoint) then return comp
+	end for
+	return null
+end function
+
+Assembly.allOpenAttachPoints = function
+	// Return a list of all the open attachment points on this assembly,
+	// with current worldPos filled in.
+	result = []
+	for comp in self.components
+		for pt in comp.attachPoints
+			if pt.attached then continue
+			pt.worldPos = comp.pos.plus(pt.localPos)
+			result.push pt
+		end for
+	end for
+	return result
+end function
+
+Assembly.trySnapTo = function(other, dpos)
+	// If this assembly is moved by dpos, can it snap to the given
+	// other assembly?  If so, adjust dpos so it fits exactly and
+	// return true.  Otherwise, return false.
+	myPts = self.allOpenAttachPoints
+	otherPts = other.allOpenAttachPoints
+	for myPt in myPts
+		myPt.worldPos.add dpos  // adjust for the new position!
+		for otherPt in otherPts
+			if not myPt.compatibleWith(otherPt) then continue
+			dist = mathUtil.distance(myPt.worldPos, otherPt.worldPos)
+			if dist > 10 then continue
+			// Found an attachment that works!
+			dpos.add otherPt.worldPos.minus(myPt.worldPos)
+			return true
+		end for
+	end for
+	return false
+end function
+
+Assembly.attach = function(other)
+	// Find all overlapping compatible attachment points between
+	// this assembly and the other one, and hook them up.  Then
+	// incorporate our components into the other assembly.  This
+	// assembly is then ready to be deleted.  Return true if
+	// successful, false if no attachment was done.
+	success = false
+	myPts = self.allOpenAttachPoints
+	otherPts = other.allOpenAttachPoints
+	for myPt in myPts
+		for otherPt in otherPts
+			if not myPt.compatibleWith(otherPt) then continue
+			dist = mathUtil.distance(myPt.worldPos, otherPt.worldPos)
+			if dist > 1 then continue
+			// Found an attachment that works -- hook it up!
+			myPt.attached = other.ownerOf(otherPt)
+			otherPt.attached = self.ownerOf(myPt)
+			success = true
+			break
+		end for
+	end for
+	if not success then return false
+	
+	// Attachment points connected; now combine components.
+	other.components = other.components + self.components
+	self.components = []
+	return true
+end function
+
+Assembly.breakAt = function(breakPos, direction)
+	// Find the component at breakPos, and break it (and possibly others
+	// attached to it) from the rest of the assembly at breakPos, in the 
+	// given ([x,y] normalized, orthogonal) direction.
+	breaker = self.componentAt(breakPos)
+	if not breaker then return
+	// Make a list of all components going with the breaker.
+	globals.breaking = [breaker]
+	toDo = [breaker]
+	while toDo
+		comp = toDo.pull
+		for atch in comp.attachPoints
+			otherComp = atch.attached
+			if not otherComp or breaking.contains(otherComp) then continue
+			pos = atch.localPos.plus(comp.pos)
+			if direction[0] > 0 then shouldBreak = pos[0] > breakPos[0]
+			if direction[0] < 0 then shouldBreak = pos[0] < breakPos[0]
+			if direction[1] > 0 then shouldBreak = pos[1] > breakPos[1]
+			if direction[1] < 0 then shouldBreak = pos[1] < breakPos[1]
+			if shouldBreak then
+				// Keep this attachment point intact, and recurse on the other component
+				breaking.push otherComp
+				toDo.push otherComp
+			else
+				// Break this attachment point.
+				comp.breakAttachment otherComp
+				otherComp.breakAttachment comp
+			end if
+		end for
+	end while
+	// Now, keep the breakers here, and move all other components
+	// to a new Assembly.
+	noob = Assembly.Make
+	for i in range(self.components.len-1, 0, -1)
+		comp = self.components[i]
+		if not breaking.contains(comp) then
+			noob.components.push comp
+			self.components.remove i
+		end if
+	end for
+	if not noob.components then return // Nothing to actually break
+	sounds.pop.play
+	noob.update
+	noob.updateBounds
+	Manager.assemblies.push noob
+	self.update
+	self.updateBounds
+	self.snappingTo = null
+end function
+
+Assembly.update = function
+	for comp in self.components
+		comp.update
+	end for
+end function
+
+
+if locals == globals then
+	print "This module does nothing on its own."
+	print "Run assemblyScene instead."
+end if
