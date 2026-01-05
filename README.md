@@ -7,3 +7,4 @@
 - **prototypes**: Prototyping area for code that might end up in the game.
 - **user.minidisk**: The actual game.  Mount this folder in Mini Micro to test or play.
 
+More details coming soon.
