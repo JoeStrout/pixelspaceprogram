@@ -1,34 +1,9 @@
 // Module to calculate and draw orbits.
 import "importUtil"
 ensureImport "listUtil"
+ensureImport "miscUtils"
 ensureImport "mathUtil"
 ensureImport "worldRenderer"
-
-// Accessors so you can use pos.x as a synonym for pos[0], etc.
-// Note that you can only use these to READ the values; do NOT
-// use them to assign new values!  You must assign to v[0], v[1], etc.
-// (Technically `v.anything = whatever` will always update v[0],
-// because MiniScript takes the `val` of whatever's to the right of
-// the dot to find the numeric index, and that will always be 0.)
-list.x = function; return self[0]; end function
-list.y = function; return self[1]; end function
-
-// More 2D list-as-vector functions:
-list.magnitude = function
-	return sqrt(self[0]^2 +self[1]^2)
-end function
-list.sqrMagnitude = function
-	return self[0]^2 + self[1]^2
-end function
-list.minus = function(other)
-	return [self[0] - other[0], self[1] - other[1]]
-end function
-list.normalize = function
-	m = sqrt(self[0]^2 +self[1]^2)
-	if m < 1E-9 then return
-	self[0] /= m
-	self[1] /= m
-end function
 
 // Orbit2D class: represents an orbit around a planet[oid].
 globals.Orbit2D = {}
