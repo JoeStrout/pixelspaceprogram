@@ -1,4 +1,5 @@
-import "mathUtil"
+import "importUtils"
+ensureImport "miscUtils"
 
 Circle = new {}
 Circle.x = 0
@@ -13,23 +14,23 @@ Circle.init = function(x, y, r=64)
 	self.y = y
 	self.radius = r
 
-	self.vel = new Vec2
+	self.vel = []
 end function
 
 Circle.checkCollition = function(c)
-	pos = Vec2.fromClass(self)
-	cPos = Vec2.fromClass(c)
+	pos = xyList(self)
+	cPos = xyList(c)
 
 	delta = cPos.minus(pos)
 	dist = delta.magnitude
 	minDist = self.radius + c.radius
 	
-	return dist < minDist 
+	return dist < minDist
 end function
 
 Circle.fixOverlap = function(c, both=false)
-	pos = Vec2.fromClass(self)
-	cPos = Vec2.fromClass(c)
+	pos = xyList(self)
+	cPos = xyList(c)
 
 	delta = cPos.minus(pos)
 	dist = delta.magnitude
