@@ -47,18 +47,10 @@ mainLoop = function
 		
 		if key.pressed("escape") then break
 		
-		//worldRenderer.update
+		worldRenderer.update
 		// update simulation
 		if timeScale > 0 then derp.update timeScale/60
-		
-		if Input.keyPressed("mouse 0") then
-			mPos = worldRenderer.screenToWorld([mouse.x, mouse.y])
-			derp.x = mPos[0]
-			derp.y = mPos[1]
-			print "Position set"
-		end if
-
-		worldRenderer.drawWorld [derp.x, derp.y], [-0, -(worldRenderer.worldRadiusAtAngle(pi/2)+25)]
+		derp.calculateScale worldRenderer.pixelScale
 
 		globals.frameCount += 1
 	end while

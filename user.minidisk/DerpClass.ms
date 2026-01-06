@@ -4,11 +4,14 @@ ensureImport "miscUtils"
 ensureImport "Input"
 
 globals.Derp = new Sprite
-Derp.image = file.loadImage("../pics/derp.png")
+Derp.image = file.loadImage("/usr/pics/derp.png")
 
 Derp.inControl = true
 
-Derp.scale = 0.3
+// Srpite is 128 pixels
+//I've set derp height to be around 3.2m
+//Other wise it was to small to see even at 5m zoom
+Derp.imageScale = 0.025
 
 Derp.moveSpeed = 100
 Derp.moveAccel = 10
@@ -140,4 +143,14 @@ Derp.update = function(dt)
 
 	self.collider.x = self.x
 	self.collider.y = self.y
+end function
+
+Derp.calculateScale = function(pixelScale)
+	imgScale = self.imageScale / pixelScale
+	if pixelScale <= 1 then
+		self.scale = imgScale
+	else
+		self.scale = 1
+		//self.image = derpIcon
+	end if
 end function
