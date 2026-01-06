@@ -1,9 +1,10 @@
 import "importUtil"
 ensureImport "CircleCollider"
 ensureImport "miscUtils"
+ensureImport "Input"
 
-Derp = new Sprite
-Derp.image = file.loadImage("/pics/derp.png")
+globals.Derp = new Sprite
+Derp.image = file.loadImage("../pics/derp.png")
 
 Derp.inControl = true
 
@@ -16,7 +17,7 @@ Derp.moveFrict = 10
 Derp.groundAccel = 10
 Derp.groundFrict = 15
 
-Derp.gravity = -298.8
+Derp.gravity = 0//-9.8
 
 Derp.airAccel = 4
 Derp.airFrict = 2
@@ -28,7 +29,7 @@ Derp.grounded = false
 Derp.xscale = 0.3
 Derp.targetScale = 0.3
 
-Derp.vel = []
+Derp.vel = [0, 0]
 Derp.collider = null
 Derp.rover = null
 
@@ -38,6 +39,8 @@ Derp.planet = null
 Derp.init = function(x, y, rad=18)
 	self.x = x
 	self.y = y
+
+	self.vel = [0, 0]
 
 	self.collider = new CircleCollider.Circle
 	self.collider.init self.x, self.y, rad
@@ -60,22 +63,19 @@ Derp.update = function(dt)
 			self.vel[1] += self.gravity * dt
 		end if
 
-		if key.available then
-			k = key.get
+		if Input.keyPressed("space") then
+			print "Jump"
+			self.vel.y = self.jumpPower
+		end if
 
-			if k == "space" then
-				self.vel.y = self.jumpPower
-			end if
+		if Input.keyPressed("e") and self.rover then
+			if self.collider.checkCollition(self.rover.collider) then
+				self.inControl = false
+				self.rover.inControl = true
 
-			if k == "e" and self.rover then
-				if self.collider.checkCollition(self.rover.collider) then
-					self.inControl = false
-					self.rover.inControl = true
-
-					self.x = self.rover.x
-					self.y = self.rover.y
-					return
-				end if
+				self.x = self.rover.x
+				self.y = self.rover.y
+				return
 			end if
 		end if
 
@@ -104,7 +104,7 @@ Derp.update = function(dt)
 			end if
 		end for
 
-		angledVel = []
+		angledVel = [0, 0]
 		angledVel[0] = self.vel[0]
 		angledVel[1] = self.vel[1]
 

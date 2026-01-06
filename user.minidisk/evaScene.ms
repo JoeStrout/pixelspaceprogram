@@ -1,20 +1,21 @@
 import "importUtil"
-ensureImport "assembly"
-ensureImport "spacecraft"
-ensureImport "gameData"
 ensureImport "worldRenderer"
-ensureImport "Derp"
+ensureImport "Input"
+ensureImport "DerpClass"
 
 setup = function
 	clear
-	
-	globals.derp = new Derp.derp
-	derp.pos = [0, worldRenderer.worldRadiusAtAngle(pi/2)+25]
-	derp.vel = [0, 0]
 
 	worldRenderer.setup
 	worldRenderer.refScreenPos = [480,320]
 	worldRenderer.zoomToScaleIdx 3
+
+	globals.derp = new Derp
+	derp.init 400, 200//0, worldRenderer.worldRadiusAtAngle(pi/2)+156
+
+	derp.xscale = 20
+	derp.targetScale = 20
+
 
 	display(2).mode = displayMode.pixel
 	display(2).clear
@@ -23,8 +24,12 @@ setup = function
 end function
 
 mainLoop = function
+	// My input system needs acces to the current frame to 
+	// correctly check pressed keys without the need for a loop
+	globals.frameCount = 0
 	while true
 		yield
+
 		// check inputs
 		if key.available then
 			k = key.get
@@ -42,10 +47,20 @@ mainLoop = function
 		
 		if key.pressed("escape") then break
 		
+		//worldRenderer.update
 		// update simulation
 		if timeScale > 0 then derp.update timeScale/60
 		
-		worldRenderer.update
+		if Input.keyPressed("mouse 0") then
+			mPos = worldRenderer.screenToWorld([mouse.x, mouse.y])
+			derp.x = mPos[0]
+			derp.y = mPos[1]
+			print "Position set"
+		end if
+
+		worldRenderer.drawWorld [derp.x, derp.y], [-0, -(worldRenderer.worldRadiusAtAngle(pi/2)+25)]
+
+		globals.frameCount += 1
 	end while
 	key.clear
 end function
