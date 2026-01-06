@@ -2,39 +2,40 @@ import "importUtil"
 ensureImport "CircleCollider"
 ensureImport "miscUtils"
 
-derp = new Sprite
-derp.image = file.loadImage("/pics/derp.png")
+Derp = new Sprite
+Derp.image = file.loadImage("/pics/derp.png")
 
-derp.inControl = true
+Derp.inControl = true
 
-derp.scale = 0.3
+Derp.scale = 0.3
 
-derp.moveSpeed = 100
-derp.moveAccel = 10
-derp.moveFrict = 10
+Derp.moveSpeed = 100
+Derp.moveAccel = 10
+Derp.moveFrict = 10
 
-derp.groundAccel = 10
-derp.groundFrict = 15
+Derp.groundAccel = 10
+Derp.groundFrict = 15
 
-derp.airAccel = 4
-derp.airFrict = 2
+Derp.gravity = -298.8
 
-derp.jumpPower = 130
+Derp.airAccel = 4
+Derp.airFrict = 2
 
-derp.grounded = false
+Derp.jumpPower = 130
 
-derp.xscale = 0.3
-derp.targetScale = 0.3
+Derp.grounded = false
 
-derp.vel = []
-derp.collider = null
-derp.rover = null
+Derp.xscale = 0.3
+Derp.targetScale = 0.3
 
-derp.cols = []
-derp.planet = null
+Derp.vel = []
+Derp.collider = null
+Derp.rover = null
 
-derp.init = function(x, y, rad=18)
-	self.vel = new Vec2
+Derp.cols = []
+Derp.planet = null
+
+Derp.init = function(x, y, rad=18)
 	self.x = x
 	self.y = y
 
@@ -44,7 +45,7 @@ derp.init = function(x, y, rad=18)
 	display(4).sprites.push self
 end function
 
-derp.update = function(dt)
+Derp.update = function(dt)
 	if self.inControl then
 		xmov = key.axis("Horizontal")
 
@@ -56,7 +57,7 @@ derp.update = function(dt)
 			self.moveAccel = self.airAccel
 			self.moveFrict = self.airFrict
 
-			self.vel[1] += gravity * dt
+			self.vel[1] += self.gravity * dt
 		end if
 
 		if key.available then
