@@ -20,7 +20,7 @@ Derp.moveFrict = 10
 Derp.groundAccel = 10
 Derp.groundFrict = 15
 
-Derp.gravity = 0//-9.8
+Derp.gravity = -298.8
 
 Derp.airAccel = 4
 Derp.airFrict = 2
@@ -91,7 +91,8 @@ Derp.update = function(dt)
 			self.vel[0] = mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
 		end if
 
-		self.scale = [self.xscale, self.targetScale]
+		// This doesn't work now because of calculateScale function
+		//self.scale = [self.xscale, self.targetScale]
 
 		self.grounded = false
 		for c in self.cols

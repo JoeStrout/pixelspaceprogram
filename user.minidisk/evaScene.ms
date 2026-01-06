@@ -11,11 +11,9 @@ setup = function
 	worldRenderer.zoomToScaleIdx 3
 
 	globals.derp = new Derp
-	derp.init 400, 200//0, worldRenderer.worldRadiusAtAngle(pi/2)+156
+	derp.calculateScale worldRenderer.pixelScale
 
-	derp.xscale = 20
-	derp.targetScale = 20
-
+	derp.init 480, 320
 
 	display(2).mode = displayMode.pixel
 	display(2).clear
@@ -49,8 +47,10 @@ mainLoop = function
 		
 		worldRenderer.update
 		// update simulation
-		if timeScale > 0 then derp.update timeScale/60
+
 		derp.calculateScale worldRenderer.pixelScale
+
+		if timeScale > 0 then derp.update timeScale/60
 
 		globals.frameCount += 1
 	end while
