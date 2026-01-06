@@ -1,4 +1,4 @@
-import "importUtils"
+import "importUtil"
 ensureImport "miscUtils"
 
 Circle = new {}
