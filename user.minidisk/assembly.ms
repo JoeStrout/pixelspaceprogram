@@ -1,6 +1,11 @@
 // This module defines the Component, AttachPoint, and Assembly classes,
 // which together define how a ship is composed of parts.
 
+import "importUtil"
+ensureImport "miscUtils"
+ensureImport "gameData"
+ensureImport "Rect"
+
 // Constants
 Dir = {"E":0, "N":1, "W":2, "S":3}
 Size = {"TINY":0, "SMALL":1, "LARGE":2, "HUGE":3}
@@ -8,6 +13,7 @@ Size = {"TINY":0, "SMALL":1, "LARGE":2, "HUGE":3}
 // Component: a single, indivisible ship part.  Each component has one or
 // more attachment points by which it can attach to other components in an assembly.
 globals.Component = {}
+Component.partDef = null      // PartDef of game data for this part
 Component.pos = null          // x,y position on screen
 Component.attachPoints = null // list of AttachPoint
 Component.sprite = null       // Sprite representing this component
@@ -18,15 +24,16 @@ Component.boundsRect = function
 	return Rect.MakeLBWH(self.pos[0] - w/2, self.pos[1] - h/2, w, h)
 end function
 
-Component.Make = function(image)
+Component.Make = function(partDef)
 	noob = new self
+	noob.partDef = partDef
 	noob.pos = [480,320]
 	noob.attachPoints = []
 	noob.sprite = new Sprite
-	noob.sprite.image = image
+	noob.sprite.image = partDef.image
 	noob.sprite.localBounds = new Bounds
-	noob.sprite.localBounds.width = image.width
-	noob.sprite.localBounds.height = image.height
+	noob.sprite.localBounds.width = partDef.image.width
+	noob.sprite.localBounds.height = partDef.image.height
 	return noob
 end function
 
@@ -271,14 +278,71 @@ Assembly.breakAt = function(breakPos, direction)
 	self.snappingTo = null
 end function
 
+Assembly.renderAt = function(g, x, y)
+	for comp in self.components
+		img = comp.sprite.image
+		g.drawImage img,
+		  x + comp.pos[0] - img.width/2,
+		  y + comp.pos[1] - img.height/2
+	end for
+end function
+
+Assembly.boundsRect = function
+	if not self.components then return Rect.MakeLBRT(0,0,0,0)
+	r = self.components[0].boundsRect
+	for i in range(1, self.components.len-1, 1)
+		r = r.union(self.components[i].boundsRect)
+	end for
+	return r
+end function
+
+Assembly.getImage = function
+	// Return an image of this Assembly.  Note that this will be 
+	// oriented in the standard nose-up orientation; but if you
+	// are going to make a rotatable sprite out of it, you probably
+	// want to rotate this image -90° first.
+	r = self.boundsRect
+	g = tempG(r.width, r.height)
+	self.renderAt g, -r.left, -r.bottom
+	// ToDo: this returns and image centered on its bounds rect,
+	// but what we probably want is to always center on the COM.
+	// Or maybe not, since that will change as we expend fuel.
+	// Figure that out, and revise this method or remove this comment.
+	return g.getImage
+end function
+
 Assembly.update = function
 	for comp in self.components
 		comp.update
 	end for
 end function
 
+standardTestRocket = function
+	// Build and return the our standard test rocket assembly.
+	asm = Assembly.Make
+	
+	part = Component.Make(gameData.parts.ruckus)
+	part.pos = [0, -61+100]
+	asm.components.push part
+	
+	part = Component.Make(gameData.parts.probeCore)
+	part.pos = [0, 100+100]
+	asm.components.push part
+	
+	// ToDo: actually attach the parts where their attachment points touch
+	return asm
+end function
 
 if locals == globals then
-	print "This module does nothing on its own."
-	print "Run assemblyScene instead."
+	clear
+	print "Testing assembly.ms"
+	
+	asm = standardTestRocket
+	r = asm.boundsRect
+	x = -r.left
+	y = -r.bottom
+	asm.renderAt gfx, x, y
+	r.offset x, y
+	r.drawLines "#FF00FF"
+	
 end if

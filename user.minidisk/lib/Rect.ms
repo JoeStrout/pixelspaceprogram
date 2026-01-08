@@ -98,6 +98,11 @@ Rect.outset = function(dist)
 	self.inset -dist
 end function
 
+Rect.offset = function(dx, dy)
+	self.left += dx
+	self.bottom += dy
+end function
+
 Rect.overlaps = function(other)
 	return self.right > other.left and self.left < other.right and
 	  self.top > other.bottom and self.bottom < other.top

@@ -25,11 +25,10 @@ scales = [10*cm, 25*cm, 50*cm, m, 3*m, 10*m, 30*m, 100*m, 300*m, km,
 scaleIdx = 0
 pixelScale = scales[scaleIdx]  // m per pixel
 
-rocketImage = Image.create(256, 64, color.white)
 rocketIcon = file.loadImage("/usr/pics/rocketIcon.png")
 
 rocketSprite = new Sprite
-rocketSprite.image = rocketImage
+rocketSprite.image = null
 // Note: rocket is ~500 pixels tall, and is assumed to
 // be 50 meters tall.  So its native scale is:
 rocketSprite.imageScale = 0.1 // m/pixel
@@ -121,7 +120,7 @@ drawRocket = function(refScreenPos)
 	imgScale = rocketSprite.imageScale / pixelScale
 	if pixelScale <= 1 then
 		rocketSprite.scale = imgScale
-		rocketSprite.image = rocketImage
+		rocketSprite.image = ship.image
 	else
 		rocketSprite.scale = 1
 		rocketSprite.image = rocketIcon

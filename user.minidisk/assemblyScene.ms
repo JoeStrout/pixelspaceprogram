@@ -18,7 +18,7 @@ Size = assembly.Size
 
 Palette = assemblyPalette.Palette
 Palette.makeAssemblyCallback = function(partDef, xy)
-	comp = Component.Make(partDef.image)
+	comp = Component.Make(partDef)
 	comp.pos = xyList(xy)
 	comp.pos[0] += 50
 

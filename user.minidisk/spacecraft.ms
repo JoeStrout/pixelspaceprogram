@@ -3,6 +3,7 @@
 import "importUtil"
 ensureImport "orbit"
 ensureImport "worldRenderer"
+ensureImport "assembly"
 
 mu_planet = orbit.mu_planet
 
@@ -15,6 +16,7 @@ engineSound = function
 end function
 
 globals.Craft = {}
+Craft.assembly = null	// Assembly of parts comprising this craft
 Craft.mass = 1000		// craft mass, in kg
 Craft.pos = null		// [x,y] position in meters relative to planet
 Craft.vel = null		// [vx, vy] velocity in meters/sec
@@ -23,6 +25,15 @@ Craft.angVec = 0		// angular velocity, in radians/sec
 Craft.thrustF = 0		// current thrust force (N), in direction we're facing
 Craft.orbit = null
 Craft.engineSound = engineSound
+Craft._cachedImage = null
+
+Craft.image = function
+	if self._cachedImage == null then
+		self._cachedImage = self.assembly.getImage
+		self._cachedImage.rotate -90
+	end if
+	return self._cachedImage
+end function
 
 Craft.updateOrbit = function
 	if self.orbit == null then self.orbit = new Orbit2D
@@ -89,6 +100,7 @@ end function
 demo = function
 	clear
 	globals.ship = new Craft
+	ship.assembly = Assembly.standardTestRocket
 	timeScale = 8
 
 	// start in a 10,000 km (radius) roughly circular orbit above the planet

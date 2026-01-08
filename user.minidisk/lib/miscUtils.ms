@@ -93,3 +93,11 @@ globals.xyList = function(listOrMap)
 	if listOrMap isa list then return listOrMap[0:2]
 	return [listOrMap.x, listOrMap.y]
 end function
+
+// Get a temp PixelDisplay for compositing etc.
+_tempG = null
+globals.tempG = function(width=512, height=512, color="#00000000")
+	if _tempG == null then outer._tempG = new PixelDisplay
+	_tempG.clear color, width, height
+	return _tempG
+end function
