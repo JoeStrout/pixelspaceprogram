@@ -12,7 +12,7 @@ Derp.inControl = true
 //I've set derp height to be around 3.2m
 //Other wise it was to small to see even at 5m zoom
 Derp.imageScale = 0.025
-
+Derp.scale = 1
 Derp.moveSpeed = 100
 Derp.moveAccel = 10
 Derp.moveFrict = 10
@@ -67,7 +67,6 @@ Derp.update = function(dt)
 		end if
 
 		if Input.keyPressed("space") then
-			print "Jump"
 			self.vel.y = self.jumpPower
 		end if
 
@@ -84,7 +83,7 @@ Derp.update = function(dt)
 
 		if xmov then
 			// simple flip animation
-			self.xscale = mathUtil.moveTowards(self.xscale, self.targetScale * sign(xmov), 5 * dt)
+			//self.xscale = mathUtil.moveTowards(self.xscale, self.targetScale * sign(xmov), 5 * dt)
 
 			self.vel[0] = mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
 		else

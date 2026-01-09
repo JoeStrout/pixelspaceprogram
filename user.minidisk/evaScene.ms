@@ -12,7 +12,7 @@ setup = function
 
 	globals.derp = new Derp
 	derp.calculateScale worldRenderer.pixelScale
-
+	
 	derp.init 480, 320
 
 	display(2).mode = displayMode.pixel
@@ -44,11 +44,11 @@ mainLoop = function
 		end if
 		
 		if key.pressed("escape") then break
-		
-		worldRenderer.update
-		// update simulation
+
 
 		derp.calculateScale worldRenderer.pixelScale
+
+		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
 
 		if timeScale > 0 then derp.update timeScale/60
 
@@ -61,3 +61,5 @@ if locals == globals then
 	setup
 	mainLoop
 end if
+
+clear
