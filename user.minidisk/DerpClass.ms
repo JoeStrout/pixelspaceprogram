@@ -2,6 +2,7 @@ import "importUtil"
 ensureImport "CircleCollider"
 ensureImport "miscUtils"
 ensureImport "Input"
+ensureImport "worldRenderer"
 
 globals.Derp = new Sprite
 Derp.image = file.loadImage("/usr/pics/derp.png")
@@ -67,7 +68,7 @@ Derp.update = function(dt)
 		end if
 
 		if Input.keyPressed("space") then
-			self.vel.y = self.jumpPower
+			self.vel[1] = self.jumpPower
 		end if
 
 		if Input.keyPressed("e") and self.rover then
@@ -107,21 +108,33 @@ Derp.update = function(dt)
 			end if
 		end for
 
+		wp = xyList(self)
+		wp[1] -= self.image.height * self.scale * 0.5 
+
+		pos = worldRenderer.screenToWorld(wp)
+		distToPlanet = pos.distanceTo([0,0])
+		angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
+
+		dist = worldRenderer.worldRadiusAtAngle(angle*deg2rad)
+
+		if distToPlanet < dist then
+			if self.vel[1] < 0 then 
+				self.vel[1] = 0
+			end if
+			self.y += dist-distToPlanet
+			self.grounded = true
+		end if
+
 		angledVel = [0, 0]
 		angledVel[0] = self.vel[0]
 		angledVel[1] = self.vel[1]
 
-		if self.planet then
-			pos = xyList(self)
-			angleToPlanet = pos.angleTo([self.planet.x, self.planet.y])  + 90
+		self.rotation = -angle + 90
 
-			self.rotation = angleToPlanet
+		// simple walking animation with rotation
+		self.rotation += cos(time * 20) * 8 * xmov
 
-			// simple walking animation with rotation
-			self.rotation += cos(time * 20) * 8 * xmov
-
-			angledVel.rotate angleToPlanet
-		end if
+		angledVel.rotate -angle+90
 
 		self.x += angledVel[0] * dt
 		self.y += angledVel[1] * dt
