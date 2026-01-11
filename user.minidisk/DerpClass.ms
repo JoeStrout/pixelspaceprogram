@@ -2,7 +2,10 @@ import "importUtil"
 ensureImport "CircleCollider"
 ensureImport "miscUtils"
 ensureImport "Input"
+ensureImport "orbit"
 ensureImport "worldRenderer"
+
+mu_planet = orbit.mu_planet
 
 globals.Derp = new Sprite
 Derp.image = file.loadImage("/usr/pics/derp.png")
@@ -14,19 +17,19 @@ Derp.inControl = true
 //Other wise it was to small to see even at 5m zoom
 Derp.imageScale = 0.025
 Derp.scale = 1
-Derp.moveSpeed = 100
-Derp.moveAccel = 10
-Derp.moveFrict = 10
+Derp.moveSpeed = 150
+Derp.moveAccel = 15
+Derp.moveFrict = 25
 
-Derp.groundAccel = 10
-Derp.groundFrict = 15
+Derp.groundAccel = 20
+Derp.groundFrict = 25
 
-Derp.gravity = -298.8
+Derp.gravity = -850
 
 Derp.airAccel = 4
 Derp.airFrict = 2
 
-Derp.jumpPower = 130
+Derp.jumpPower = 230
 
 Derp.grounded = false
 
@@ -83,72 +86,55 @@ Derp.update = function(dt)
 		end if
 
 		if xmov then
-			// simple flip animation
-			//self.xscale = mathUtil.moveTowards(self.xscale, self.targetScale * sign(xmov), 5 * dt)
-
 			self.vel[0] = mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
 		else
 			self.vel[0] = mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
 		end if
 
-		// This doesn't work now because of calculateScale function
-		//self.scale = [self.xscale, self.targetScale]
 
-		self.grounded = false
-		closestPoint = []
-		for i in range(0, self.cols.len-1)
-			if i == 0 then
-				closestPoint = self.cols[i]
-			else
-				p = xyList(self)
-
-				currXDist = p.distanceTo(closestPoint)
-				distToPoint = p.distanceTo(self.cols[i])
-
-				if distToPoint < currXDist then
+		if self.vel[0] != 0 or self.vel[1] != 0 then
+			self.grounded = false
+			closestPoint = []
+			for i in range(0, self.cols.len-1)
+				if i == 0 then
 					closestPoint = self.cols[i]
+				else
+					p = xyList(self)
+
+					currXDist = p.distanceTo(closestPoint)
+					distToPoint = p.distanceTo(self.cols[i])
+
+					if distToPoint < currXDist then
+						closestPoint = self.cols[i]
+					end if
+				end if
+			end for
+
+			if closestPoint.len > 1 then
+				if (self.y - self.image.height * self.scale * 0.5) < closestPoint[1] and self.vel[1] < 0 then
+					self.grounded = true
+					self.y = closestPoint[1] + self.image.height * self.scale * 0.5
+					self.vel[1] = 0
 				end if
 			end if
-		end for
 
-		if closestPoint.len > 1 then
-			if (self.y - self.image.height * self.scale * 0.5) < closestPoint[1] then
-				self.grounded = true
-				self.y = closestPoint[1] + self.image.height * self.scale * 0.5
-				self.vel[1] = 0
-			end if
+			pos = worldRenderer.screenToWorld(xyList(self))
+			angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
+
+			angledVel = [0, 0]
+			angledVel[0] = self.vel[0]
+			angledVel[1] = self.vel[1]
+
+			self.rotation = -angle + 90
+
+			// simple walking animation with rotation
+			self.rotation += cos(time * 20) * 8 * xmov
+
+			angledVel.rotate -angle+90
+
+			self.x += angledVel[0] * dt
+			self.y += angledVel[1] * dt
 		end if
-
-		//wp = xyList(self)
-		//wp[1] -= self.image.height * self.scale * 0.5 
-//
-		pos = worldRenderer.screenToWorld(xyList(self))
-		//distToPlanet = pos.distanceTo([0,0])
-		angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
-//
-		//dist = worldRenderer.worldRadiusAtAngle(angle*deg2rad)
-//
-		//if distToPlanet < dist then
-		//	if self.vel[1] < 0 then 
-		//		self.vel[1] = 0
-		//	end if
-		//	self.y += dist-distToPlanet
-		//	self.grounded = true
-		//end if
-
-		angledVel = [0, 0]
-		angledVel[0] = self.vel[0]
-		angledVel[1] = self.vel[1]
-
-		self.rotation = -angle + 90
-
-		// simple walking animation with rotation
-		self.rotation += cos(time * 20) * 8 * xmov
-
-		angledVel.rotate -angle+90
-
-		self.x += angledVel[0] * dt
-		self.y += angledVel[1] * dt
 	else
 		if self.rover then
 			self.vel[0] = 0
