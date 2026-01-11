@@ -1,6 +1,6 @@
 import "importUtil"
+ensureImport "DSL"
 ensureImport "worldRenderer"
-ensureImport "Input"
 ensureImport "DerpClass"
 ensureImport "Rover"
 
@@ -34,6 +34,8 @@ mainLoop = function
 	globals.frameCount = 0
 	while true
 		yield
+
+		dsl.update
 
 		// check inputs
 		if key.available then

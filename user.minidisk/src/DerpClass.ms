@@ -1,7 +1,6 @@
 import "importUtil"
 ensureImport "CircleCollider"
 ensureImport "miscUtils"
-ensureImport "Input"
 ensureImport "orbit"
 ensureImport "worldRenderer"
 
@@ -70,11 +69,11 @@ Derp.update = function(dt)
 			self.vel[1] += self.gravity * dt
 		end if
 
-		if Input.keyPressed("space") then
+		if dsl.keyPressed("space") then
 			self.vel[1] = self.jumpPower
 		end if
 
-		if Input.keyPressed("e") and self.rover then
+		if dsl.keyPressed("e") and self.rover then
 			if self.collider.checkCollition(self.rover.collider) then
 				self.inControl = false
 				self.rover.inControl = true
@@ -144,7 +143,7 @@ Derp.update = function(dt)
 
 			self.rotation = self.rover.rotation
 
-			if keyPressed("e") then
+			if dsl.keyPressed("e") then
 				self.inControl = true
 				self.rover.inControl = false
 			end if

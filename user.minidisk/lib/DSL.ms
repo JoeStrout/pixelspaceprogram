@@ -2,7 +2,6 @@
 globals.dsl = {}
 
 // Library features
-import "DSL_Debug"
 import "DSL_Input"
 import "DSL_Animations"
 import "DSL_Log"

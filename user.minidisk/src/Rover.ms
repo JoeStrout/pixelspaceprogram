@@ -28,7 +28,7 @@ end function
 wheel.update = function(dt)
 
 	if self.body.inControl then
-		self.vel[0] = 2 * key.axis("Horizontal")
+		self.vel[0] = 2 * dsl.axis("Horizontal")
 	else
 		self.vel[0] = 0
 	end if
