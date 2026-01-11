@@ -25,6 +25,8 @@ Derp.moveSpeed = 150
 Derp.moveAccel = 15
 Derp.moveFrict = 25
 
+Derp.lookDir = 1
+
 Derp.groundAccel = 20
 Derp.groundFrict = 25
 
@@ -91,10 +93,11 @@ Derp.update = function(dt)
 
 		if xmov then
 			self.vel[0] = mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
+
+			self.lookDir = sign(xmov)
 		else
 			self.vel[0] = mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
 		end if
-
 
 		if self.vel[0] != 0 or self.vel[1] != 0 then
 			// Derp is moving
@@ -122,9 +125,9 @@ Derp.update = function(dt)
 			end for
 
 			if closestPoint.len > 1 then
-				if (self.y - self.image.height * self.scale * 0.5) < closestPoint[1] and self.vel[1] < 0 then
+				if (self.y - self.image.height * self.scale[1] * 0.5) < closestPoint[1] and self.vel[1] < 0 then
 					self.grounded = true
-					self.y = closestPoint[1] + self.image.height * self.scale * 0.5
+					self.y = closestPoint[1] + self.image.height * self.scale[1] * 0.5
 					self.vel[1] = 0
 				end if
 			end if
@@ -175,9 +178,9 @@ end function
 Derp.calculateScale = function(pixelScale)
 	imgScale = self.imageScale / pixelScale
 	if pixelScale <= 1 then
-		self.scale = imgScale
+		self.scale = [imgScale * self.lookDir, imgScale]
 	else
-		self.scale = 1
+		self.scale = [1, 1]
 		//self.image = derpIcon
 	end if
 end function
