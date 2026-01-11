@@ -1,6 +1,5 @@
-// Input system extracted from my custom wip library
+// Input system
 
-dsl = {}
 dsl.keys = {
 	"a": {"code": "a", "lastPressed": -1, "lastReleased": -1, "wasDown": 0, "index": 0, "state" : "up", "lastChecked": -1}, 
 	"b": {"code": "b", "lastPressed": -1, "lastReleased": -1, "wasDown": 0, "index": 1, "state" : "up", "lastChecked": -1}, 
@@ -193,11 +192,12 @@ dsl.keys = {
 	"joystick 4 button 15": {"code": "joystick 4 button 15", "lastPressed": -1, "lastReleased": -1, "wasDown": 0, "index": 188, "state" : "up", "lastChecked": -1}}
 
 dsl.checkKeyState = function(k)
-	if  dsl.keys[k].lastChecked == frameCount then 
+
+	if  dsl.keys[k].lastChecked == dsl.frameCount then 
 		return dsl.keys[k].state
 	end if
 
-	dsl.keys[k].lastChecked = frameCount
+	dsl.keys[k].lastChecked = dsl.frameCount
 
 	if key.pressed(k) then
 		if dsl.keys[k].state == "up" or dsl.keys[k].state == "released" then
@@ -216,23 +216,33 @@ dsl.checkKeyState = function(k)
 	return dsl.keys[k].state
 end function
 
-keyPressed = function(k)
+dsl.keyPressed = function(k)
 	cState = dsl.checkKeyState(k)
 	return cState == "pressed"
 end function
 
-keyDown = function(k)
+dsl.keyDown = function(k)
 	cState = dsl.checkKeyState(k)
 	return cState == "down"
 end function
 
-keyReleased = function(k)
+dsl.keyReleased = function(k)
 	cState = dsl.checkKeyState(k)
 	return cState == "released"
 end function
 
-keyUp = function(k)
+dsl.keyUp = function(k)
 	cState = dsl.checkKeyState(k)
 	return cState == "up"
 end function
 
+dsl.axis = function(k1, k2="")
+	if k1 == "Horizontal" or k1 == "Vertical" then
+		return key.axis(k1)
+	else if k2 != "" then
+		k1P = dsl.checkKeyState(k1)
+		k2P = dsl.checkKeyState(k2)
+
+		return (k2P == "down" or k2P == "pressed") - (k1P == "down" or k1P == "pressed")
+	end if
+end function
