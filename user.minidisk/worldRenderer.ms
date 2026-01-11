@@ -83,6 +83,8 @@ drawWorld = function(refScreenPos, refWorldPos)
 	end if
 end function
 
+visiblePoly = []
+
 // drawTerrain: draw the visible section of the ground by actually
 // sampling the terrain height along the visible arc, and drawing
 // it as a polygon.
@@ -100,6 +102,8 @@ drawTerrain = function(worldCtrPix)
 	poly.push [poly[-1][0], 0]
 	poly.push [poly[0][0], 0]
 	gfx.fillPoly poly, color.green
+
+	outer.visiblePoly = poly
 end function
 
 worldRadiusAtAngle = function(angleInRadians)

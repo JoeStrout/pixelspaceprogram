@@ -50,6 +50,8 @@ mainLoop = function
 
 		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
 
+		derp.cols = worldRenderer.visiblePoly
+
 		if timeScale > 0 then derp.update timeScale/60
 
 		globals.frameCount += 1

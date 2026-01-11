@@ -95,35 +95,46 @@ Derp.update = function(dt)
 		//self.scale = [self.xscale, self.targetScale]
 
 		self.grounded = false
-		for c in self.cols
-			if self.collider.checkCollition(c) then
-				self.collider.fixOverlap(c)
+		closestPoint = []
+		for i in range(0, self.cols.len-1)
+			if i == 0 then
+				closestPoint = self.cols[i]
+			else
+				p = xyList(self)
 
-				self.x = self.collider.x
-				self.y = self.collider.y
+				currXDist = p.distanceTo(closestPoint)
+				distToPoint = p.distanceTo(self.cols[i])
 
-				self.grounded = true
-
-				if self.vel[1] < 0 then self.vel[1] = 0
+				if distToPoint < currXDist then
+					closestPoint = self.cols[i]
+				end if
 			end if
 		end for
 
-		wp = xyList(self)
-		wp[1] -= self.image.height * self.scale * 0.5 
-
-		pos = worldRenderer.screenToWorld(wp)
-		distToPlanet = pos.distanceTo([0,0])
-		angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
-
-		dist = worldRenderer.worldRadiusAtAngle(angle*deg2rad)
-
-		if distToPlanet < dist then
-			if self.vel[1] < 0 then 
+		if closestPoint.len > 1 then
+			if (self.y - self.image.height * self.scale * 0.5) < closestPoint[1] then
+				self.grounded = true
+				self.y = closestPoint[1] + self.image.height * self.scale * 0.5
 				self.vel[1] = 0
 			end if
-			self.y += dist-distToPlanet
-			self.grounded = true
 		end if
+
+		//wp = xyList(self)
+		//wp[1] -= self.image.height * self.scale * 0.5 
+//
+		pos = worldRenderer.screenToWorld(xyList(self))
+		//distToPlanet = pos.distanceTo([0,0])
+		angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
+//
+		//dist = worldRenderer.worldRadiusAtAngle(angle*deg2rad)
+//
+		//if distToPlanet < dist then
+		//	if self.vel[1] < 0 then 
+		//		self.vel[1] = 0
+		//	end if
+		//	self.y += dist-distToPlanet
+		//	self.grounded = true
+		//end if
 
 		angledVel = [0, 0]
 		angledVel[0] = self.vel[0]
