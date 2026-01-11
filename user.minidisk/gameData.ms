@@ -29,6 +29,15 @@ PartDef.MakeFromData = function(data)
 	pd.capacity = data.Capacity
 	pd.techNode = data["Tech Node"]
 	pd.anchors = data.Anchors
+	m = data.Mass
+	if m.indexOf("-") != null then   // wet mass - dry mass
+		parts = m.split("-")
+		pd.dryMass = parts[1].val
+		pd.fuelMass = parts[0].val - pd.dryMass
+		pd.mass = function; return self.dryMass + self.fuelMass; end function
+	else
+		pd.mass = m.val
+	end if
 	return pd
 end function
 
