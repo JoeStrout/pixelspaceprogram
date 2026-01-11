@@ -11,6 +11,11 @@ Derp.image = file.loadImage("/usr/pics/derp.png")
 
 Derp.inControl = true
 
+Derp.walkAnim = dsl.anim.create(file.loadImage("/usr/pics/derpling_walking.png"), 128)
+Derp.idleAnim = dsl.anim.create(file.loadImage("/usr/pics/derpling_idle.png"), 128)
+
+Derp.currAnim = Derp.idleAnim
+
 // Srpite is 128 pixels
 //I've set derp height to be around 3.2m
 //Other wise it was to small to see even at 5m zoom
@@ -92,6 +97,13 @@ Derp.update = function(dt)
 
 
 		if self.vel[0] != 0 or self.vel[1] != 0 then
+			// Derp is moving
+			if abs(self.vel[0]) > 50 then
+				self.currAnim = self.walkAnim
+			else
+				self.currAnim = self.idleAnim
+			end if
+
 			self.grounded = false
 			closestPoint = []
 			for i in range(0, self.cols.len-1)
@@ -133,6 +145,9 @@ Derp.update = function(dt)
 
 			self.x += angledVel[0] * dt
 			self.y += angledVel[1] * dt
+		else
+			// derp is idle
+			self.currAnim = self.idleAnim
 		end if
 	else
 		if self.rover then
@@ -152,6 +167,9 @@ Derp.update = function(dt)
 
 	self.collider.x = self.x
 	self.collider.y = self.y
+
+	// Animate sprite
+	dsl.anim.animate self, self.currAnim
 end function
 
 Derp.calculateScale = function(pixelScale)

@@ -16,11 +16,11 @@ setup = function
 	
 	derp.init 480, 320
 
-	globals.rover = new Rover.rover
-	rover.x = 480; rover.y = 320
-	rover.init
+	//globals.rover = new Rover.rover
+	//rover.x = 480; rover.y = 320
+	//rover.init
 
-	derp.rover = rover
+	//derp.rover = rover
 
 	display(2).mode = displayMode.pixel
 	display(2).clear
@@ -57,13 +57,13 @@ mainLoop = function
 		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
 
 		derp.cols = worldRenderer.visiblePoly
-		rover.leftWheel.cols = worldRenderer.visiblePoly
-		rover.rightWheel.cols = worldRenderer.visiblePoly
+		//rover.leftWheel.cols = worldRenderer.visiblePoly
+		//rover.rightWheel.cols = worldRenderer.visiblePoly
 
 
 		if timeScale > 0 then 
 			derp.update timeScale/60
-			rover.update timeScale/60
+			//rover.update timeScale/60
 		end if
 
 	end while
