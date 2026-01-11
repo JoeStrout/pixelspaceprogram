@@ -11,8 +11,7 @@ ensureImport "worldRenderer"
 
 setup = function
 	clear
-	globals.ship = new Craft
-	ship.assembly = assembly.standardTestRocket
+	globals.ship = Craft.Make(assembly.standardTestRocket)
 
 	if false then
 		// start in a 10,000 km (radius) roughly circular orbit above the planet

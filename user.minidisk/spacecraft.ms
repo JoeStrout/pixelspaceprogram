@@ -15,6 +15,26 @@ engineSound = function
 	return snd
 end function
 
+globals.StageType = {}
+StageType.NONE = "NONE"
+StageType.ENGINE = "ENGINE"
+StageType.DECOUPLER = "DECOUPLER"
+StageType.CHUTES = "CHUTES"
+
+// Stage: represents a triggerable part of a spacecraft, that may either
+// represent a set of engines, a decoupler, parachutes, or whatever.
+// Each stage has a corresponding panel in the cockpit UI.
+globals.Stage = {}
+Stage.type = StageType.NONE
+
+Stage.Make = function(type)
+	noob = new self
+	noob.type = type
+	if type == StageType.ENGINE then noob.fuelPct = 100
+	return noob
+end function
+
+// Craft: represents the whole spacecraft.
 globals.Craft = {}
 Craft.assembly = null	// Assembly of parts comprising this craft
 Craft.mass = 1000		// craft mass, in kg
@@ -26,6 +46,24 @@ Craft.thrustF = 0		// current thrust force (N), in direction we're facing
 Craft.orbit = null
 Craft.engineSound = engineSound
 Craft._cachedImage = null
+Craft.stages = null
+
+Craft.Make = function(assembly)
+	craft = new self
+	craft.assembly = assembly
+	// For now, hard-coding the stages; ToDo: calculate from assembly
+	craft.stages = [null]
+	for i in range(1,8)
+		if i == 1 then
+			craft.stages.push Stage.Make(StageType.ENGINE)
+		else if i == 2 then
+			craft.stages.push Stage.Make(StageType.DECOUPLER)
+		else
+			craft.stages.push Stage.Make(StageType.NONE)
+		end if
+	end for
+	return craft
+end function
 
 Craft.image = function
 	if self._cachedImage == null then
@@ -99,8 +137,7 @@ end function
 
 demo = function
 	clear
-	globals.ship = new Craft
-	ship.assembly = Assembly.standardTestRocket
+	globals.ship = Craft.Make(Assembly.standardTestRocket)
 	timeScale = 8
 
 	// start in a 10,000 km (radius) roughly circular orbit above the planet
