@@ -13,8 +13,6 @@ Circle.init = function(x, y, r=64)
 	self.x = x
 	self.y = y
 	self.radius = r
-
-	self.vel = []
 end function
 
 Circle.checkCollition = function(c)

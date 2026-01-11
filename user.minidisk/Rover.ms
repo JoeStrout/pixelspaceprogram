@@ -5,9 +5,9 @@ import "worldRenderer"
 wheel = new CircleCollider.Circle
 wheel.grounded = null
 wheel.body = null
-wheel.pos = null
-wheel.cols = null
-wheel.vel = null
+wheel.pos = [0,0]
+wheel.cols = []
+wheel.vel = [0,0]
 
 wheel.gravity = -1050
 
@@ -16,10 +16,11 @@ wheel.init = function(x, y, rad)
  	//self.x - 32, self.y - 16, 14
  	self.x = x
  	self.y = y
-
  	self.radius = rad
 
-	self.pos = xyList(self)
+ 	super.init x, y, rad
+
+	self.pos = [x, y]
 	self.vel = [0,0]
 	self.cols = []
 end function
