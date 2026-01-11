@@ -9,6 +9,9 @@ globals.cm = 0.01
 globals.m = 1
 globals.km = 1000
 
+// to check collisions
+visiblePoly = []
+
 // Constants:
 worldRadius = 6000*km
 
@@ -82,8 +85,6 @@ drawWorld = function(refScreenPos, refWorldPos)
 		drawTerrain worldCtrPix
 	end if
 end function
-
-visiblePoly = []
 
 // drawTerrain: draw the visible section of the ground by actually
 // sampling the terrain height along the visible arc, and drawing
