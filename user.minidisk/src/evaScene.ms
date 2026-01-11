@@ -29,9 +29,6 @@ setup = function
 end function
 
 mainLoop = function
-	// My input system needs acces to the current frame to 
-	// correctly check pressed keys without the need for a loop
-	globals.frameCount = 0
 	while true
 		yield
 
@@ -69,7 +66,6 @@ mainLoop = function
 			rover.update timeScale/60
 		end if
 
-		globals.frameCount += 1
 	end while
 	key.clear
 end function
