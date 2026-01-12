@@ -18,27 +18,53 @@ nameToKey = function(s)
 end function
 
 globals.PartDef = {}
-PartDef.MakeFromData = function(data)
-	pd = new self
-	pd.name = data.Name
-	pd.key = nameToKey(pd.name)
-	pd.size = data.Size
-	pd.ispAtm = data["ISP Atm"]
-	pd.ispVac = data["ISP Vac"]
-	pd.thrust = data.Thrust
-	pd.capacity = data.Capacity
-	pd.techNode = data["Tech Node"]
-	pd.anchors = data.Anchors
+
+PartDef.initFromData = function(data)
+	self.name = data.Name
+	self.key = nameToKey(self.name)
+	self.size = data.Size
+	self.ispAtm = data["ISP Atm"]
+	self.ispVac = data["ISP Vac"]
+	self.thrust = data.Thrust
+	self.capacity = data.Capacity
+	self.techNode = data["Tech Node"]
+	self.anchors = data.Anchors
+	self.massFlow = data["Mass Flow"]
 	m = data.Mass
 	if m.indexOf("-") != null then   // wet mass - dry mass
 		parts = m.split("-")
-		pd.dryMass = parts[1].val
-		pd.fuelMass = parts[0].val - pd.dryMass
-		pd.mass = function; return self.dryMass + self.fuelMass; end function
+		self.dryMass = parts[1].val
+		self.fuelMass = parts[0].val - self.dryMass
+		self.fullFuel = self.fuelMass
 	else
-		pd.mass = m.val
+		self.mass = m.val
 	end if
+end function
+
+PartDef.MakeFromData = function(data)
+	isEngine = data["Category"] == "Engines"
+	if isEngine then pd = new EngineDef else pd = new self
+	pd.initFromData data
 	return pd
+end function
+
+PartDef.initFromData = function(data)
+	self.name = data.Name
+	self.key = nameToKey(self.name)
+	self.size = data.Size
+	self.capacity = data.Capacity
+	self.techNode = data["Tech Node"]
+	self.anchors = data.Anchors
+	self.massFlow = data["Mass Flow"]
+	m = data.Mass
+	if m.indexOf("-") != null then   // wet mass - dry mass
+		parts = m.split("-")
+		self.dryMass = parts[1].val
+		self.fuelMass = parts[0].val - self.dryMass
+		self.fullFuel = self.fuelMass
+	else
+		self.mass = m.val
+	end if
 end function
 
 PartDef.image = function
@@ -47,6 +73,38 @@ PartDef.image = function
 	if not img then img = Image.create(128, 128, color.silver)
 	self.image = img	// cache for speedy future calls
 	return img
+end function
+
+globals.EngineDef = new PartDef
+EngineDef.mass = function
+	return self.dryMass + self.fuelMass
+end function
+
+EngineDef.initFromData = function(data)
+	super.initFromData data
+	self.ispAtm = data["ISP Atm"]
+	self.ispVac = data["ISP Vac"]
+	m = data.Mass
+	if m.indexOf("-") != null then   // wet mass - dry mass
+		parts = m.split("-")
+		self.dryMass = parts[1].val
+		self.fuelMass = parts[0].val - self.dryMass
+		self.fullFuel = self.fuelMass
+	else
+		self.mass = m.val
+	end if
+end function
+
+// Fuel left, from 0 - 100 %
+EngineDef.fuelPercent = function
+	return self.fuelMass / self.fullFuel * 100
+end function
+
+// Thrust (in N) produced by this engine, given atmosphere and throttle
+EngineDef.thrust = function(atmosphere=1, throttle=1)
+	if self.fuelMass <= 0 then return 0
+	isp = mathUtil.lerp(self.ispVac, self.ispAtm, atmosphere)
+	return self.massFlow * isp * 9.81 * throttle
 end function
 
 globals.TechNode = {}
