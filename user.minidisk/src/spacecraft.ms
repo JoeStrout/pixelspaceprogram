@@ -42,7 +42,7 @@ Craft.pos = null		// [x,y] position in meters relative to planet
 Craft.vel = null		// [vx, vy] velocity in meters/sec
 Craft.angle = 0			// rotation angle in radians
 Craft.angVec = 0		// angular velocity, in radians/sec
-Craft.thrustF = 0		// current thrust force (N), in direction we're facing
+Craft.throttle = 0		// current throttle (0-1)
 Craft.orbit = null
 Craft.engineSound = engineSound
 Craft._cachedImage = null
@@ -84,12 +84,44 @@ Craft.update = function(dt)
 	g = mu_planet / r^2  // acceleration due to gravity, in m/sec^2
 	gDir = [-self.pos[0], -self.pos[1]]
 	gDir.normalize
-	fwdDir = [cos(self.angle), sin(self.angle)]
-	thrustAcc = self.thrustF / self.mass
-	acc = [
-		gDir[0] * g + fwdDir[0] * thrustAcc,
-		gDir[1] * g + fwdDir[1] * thrustAcc ]
+	
+	if self.throttle > 0 then
+		thrusting = true
+		// HACK for now: assume component 0 is our engine,
+		// and that corresponds to stage 1.
+		engineComp = self.assembly.components[0]
+		engineDef = engineComp.partDef
+		qa.assert engineDef isa EngineDef
+		stageNum = 1
 		
+		// Also HACK for now: assume 0.5 atm pressuer
+		atmPressure = 0.5
+		
+		thrustN = engineDef.thrust(self.throttle, atmPressure)
+		engineComp.fuelMass -= engineDef.massFlow * self.throttle * dt
+		if engineComp.fuelMass < 0 then
+			engineComp.fuelMass = 0
+			thrustN = 0
+			thrusting = false
+		else
+			ship.stages[stageNum].fuelPct = engineComp.fuelPct
+			cockpitUI.drawStagePanel stageNum
+		end if		
+		
+		self.mass = 0
+		for comp in self.assembly.components
+			self.mass += comp.mass
+		end for
+		
+		fwdDir = [cos(self.angle), sin(self.angle)]
+		thrustAcc = thrustN / self.mass
+		acc = [
+			gDir[0] * g + fwdDir[0] * thrustAcc,
+			gDir[1] * g + fwdDir[1] * thrustAcc ]
+	else
+		thrusting = false
+		acc = [gDir[0] * g, gDir[1] * g]
+	end if
 	
 	// then integrate to update our state
 	self.vel[0] += acc[0] * dt
@@ -100,7 +132,7 @@ Craft.update = function(dt)
 	
 	// and if we're under thrust, update the orbit; otherwise,
 	// lock to the orbit radius
-	if self.thrustF then
+	if thrusting then
 		self.updateOrbit
 		if not self.engineSound.isPlaying then self.engineSound.play
 	else
@@ -164,9 +196,9 @@ demo = function
 		yield
 		// check inputs
 		if key.pressed("left shift") or key.pressed("right shift") then
-			ship.thrustF = 5000  // Apollo service module ~= 91 kN
+			ship.throttle = 1
 		else
-			ship.thrustF = 0
+			ship.throttle = 0
 		end if
 		if key.available then
 			k = key.get

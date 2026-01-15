@@ -34,8 +34,8 @@ PartDef.initFromData = function(data)
 	if m.indexOf("-") != null then   // wet mass - dry mass
 		parts = m.split("-")
 		self.dryMass = parts[1].val
-		self.fuelMass = parts[0].val - self.dryMass
-		self.fullFuel = self.fuelMass
+		self.mass = parts[0].val
+		self.fuelMass = self.mass - self.dryMass
 	else
 		self.mass = m.val
 	end if
@@ -61,7 +61,6 @@ PartDef.initFromData = function(data)
 		parts = m.split("-")
 		self.dryMass = parts[1].val
 		self.fuelMass = parts[0].val - self.dryMass
-		self.fullFuel = self.fuelMass
 	else
 		self.mass = m.val
 	end if
@@ -76,9 +75,6 @@ PartDef.image = function
 end function
 
 globals.EngineDef = new PartDef
-EngineDef.mass = function
-	return self.dryMass + self.fuelMass
-end function
 
 EngineDef.initFromData = function(data)
 	super.initFromData data
@@ -88,16 +84,11 @@ EngineDef.initFromData = function(data)
 	if m.indexOf("-") != null then   // wet mass - dry mass
 		parts = m.split("-")
 		self.dryMass = parts[1].val
-		self.fuelMass = parts[0].val - self.dryMass
-		self.fullFuel = self.fuelMass
+		self.mass = parts[0].val
+		self.fuelMass = self.mass - self.dryMass
 	else
 		self.mass = m.val
 	end if
-end function
-
-// Fuel left, from 0 - 100 %
-EngineDef.fuelPercent = function
-	return self.fuelMass / self.fullFuel * 100
 end function
 
 // Thrust (in N) produced by this engine, given atmosphere and throttle

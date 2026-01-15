@@ -3,6 +3,8 @@
 import "importUtil"
 ensureImport "listUtil"
 import "LookupTable"
+ensureImport "displays"
+
 
 // Handy units:
 globals.cm = 0.01
@@ -46,7 +48,7 @@ drawCircle = function(screenCenter, screenRadius, color)
 	left = screenCenter[0] - screenRadius
 	bottom = screenCenter[1] - screenRadius
 	diam = screenRadius * 2
-	gfx.fillEllipse left, bottom, diam, diam, color	  
+	displays.exterior.fillEllipse left, bottom, diam, diam, color	  
 end function
 
 // worldToScreen: given an [x,y] position in absolute (meter) coordinates,
@@ -66,7 +68,7 @@ drawWorld = function(refScreenPos, refWorldPos)
 	worldCtrPix = [
 	  refScreenPos[0] + refWorldPos[0] / pixelScale,
 	  refScreenPos[1] + refWorldPos[1] / pixelScale ]
-	gfx.clear color.clear
+	displays.exterior.clear color.clear
 	worldRadPix = worldRadius / pixelScale
 	
 	if pixelScale <= 100*km then
@@ -102,7 +104,7 @@ drawTerrain = function(worldCtrPix)
 	end while
 	poly.push [poly[-1][0], 0]
 	poly.push [poly[0][0], 0]
-	gfx.fillPoly poly, color.green
+	displays.exterior.fillPoly poly, color.green
 
 	outer.visiblePoly = poly
 end function
@@ -133,7 +135,7 @@ drawRocket = function(refScreenPos)
 end function
 
 drawScaleBar = function
-	gfx.line 10, 630, 10+50, 630, color.white, 3
+	displays.exterior.line 10, 630, 10+50, 630, color.white, 3
 	barSize = 50 * pixelScale
 	if barSize >= km then
 		s = str(round(barSize/km, 2)) + " km"
@@ -142,7 +144,7 @@ drawScaleBar = function
 	else
 		s = str(round(barSize/cm, 2)) + " cm"
 	end if
-	gfx.print s, 10, 615, color.white, "small"
+	displays.exterior.print s, 10, 615, color.white, "small"
 end function
 
 // screenToWorld: inverse of worldToScreen, converts screen pixel
@@ -335,7 +337,7 @@ drawOrbit = function(orbit, color="#88FFFF")
 		// convert to display units
 		point = worldToScreen(point)
 		// then draw!
-		if lastPoint != null then gfx.line lastPoint.x, lastPoint.y, point.x, point.y, color
+		if lastPoint != null then displays.exterior.line lastPoint.x, lastPoint.y, point.x, point.y, color
 		lastPoint = point
 	end for
 end function
@@ -354,8 +356,7 @@ rocketPos = [0, worldRadiusAtAngle(pi/2)+25]  // position of the rocket in the w
 refScreenPos = [480, 200]  // position of the rocket on screen, in pixels
 
 setup = function
-	clear
-	display(4).sprites.push rocketSprite
+	displays.outerSprites.sprites.push rocketSprite
 end function
 
 update = function
@@ -419,6 +420,7 @@ end function
 
 if locals == globals then
 	runUnitTests
+	displays.setup
 	setup
 	rocketSprite.rotation = 90
 	while true

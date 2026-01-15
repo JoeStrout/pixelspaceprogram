@@ -12,6 +12,7 @@ ensureImport "sounds"
 ensureImport "assembly"
 ensureImport "assemblyPalette"
 ensureImport "uiWidgets"
+ensureImport "displays"
 
 Dir = assembly.Dir
 Size = assembly.Size
@@ -37,7 +38,7 @@ Palette.makeAssemblyCallback = function(partDef, xy)
 		comp.attachPoints.push AttachPoint.Make([-hw, 0], Dir.W, Size.SMALL)
 	end if
 
-	comp.addToDisplay spriteDisp
+	comp.addToDisplay displays.outerSprites
 
 	assm = Assembly.Make
 	assm.components.push comp
@@ -158,10 +159,9 @@ goToLaunchPad = function
 end function
 
 main = function
-	clear
+	displays.setup
 	gfx.clear "#4A6DE5"
 	sounds.init
-	globals.spriteDisp = display(4)
 	Palette.draw
 	
 	homeBtn = Button.Make("", 920, 600)
