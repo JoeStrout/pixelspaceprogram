@@ -31,11 +31,10 @@ Derp.groundAccel = 20
 Derp.groundFrict = 25
 
 Derp.gravity = -850
-
 Derp.airAccel = 4
 Derp.airFrict = 2
 
-Derp.jumpPower = 230
+Derp.jumpPower = 8 * m
 
 Derp.grounded = false
 
@@ -61,14 +60,14 @@ Derp.init = function(x, y, rad=18)
 	display(4).sprites.push self
 end function
 
-Derp.update = function(dt)
+Derp.update = function(dt, pixelScale)
 	if self.inControl then
 		xmov = key.axis("Horizontal")
 
 		if self.grounded then
 			self.moveAccel = self.groundAccel
 			self.moveFrict = self.groundFrict
-
+			self.vel[1] = 0
 		else
 			self.moveAccel = self.airAccel
 			self.moveFrict = self.airFrict
@@ -91,67 +90,67 @@ Derp.update = function(dt)
 			end if
 		end if
 
+		if dsl.keyPressed("p") then
+			print self.vel
+		end if
+
 		if xmov then
-			self.vel[0] = mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
+			self.vel[0] = xmov * self.moveSpeed// mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
 
 			self.lookDir = sign(xmov)
 		else
-			self.vel[0] = mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
+			self.vel[0] = 0//mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
 		end if
 
-		if self.vel[0] != 0 or self.vel[1] != 0 then
-			// Derp is moving
-			if abs(self.vel[0]) > 50 then
-				self.currAnim = self.walkAnim
-			else
-				self.currAnim = self.idleAnim
-			end if
-
-			self.grounded = false
-			closestPoint = []
-			for i in range(0, self.cols.len-1)
-				if i == 0 then
-					closestPoint = self.cols[i]
-				else
-					p = xyList(self)
-
-					currXDist = p.distanceTo(closestPoint)
-					distToPoint = p.distanceTo(self.cols[i])
-
-					if distToPoint < currXDist then
-						closestPoint = self.cols[i]
-					end if
-				end if
-			end for
-
-			if closestPoint.len > 1 then
-				if (self.y - self.image.height * self.scale[1] * 0.5) < closestPoint[1] and self.vel[1] < 0 then
-					self.grounded = true
-					self.y = closestPoint[1] + self.image.height * self.scale[1] * 0.5
-					self.vel[1] = 0
-				end if
-			end if
-
-			pos = worldRenderer.screenToWorld(xyList(self))
-			angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
-
-			angledVel = [0, 0]
-			angledVel[0] = self.vel[0]
-			angledVel[1] = self.vel[1]
-
-			self.rotation = -angle + 90
-
-			// simple walking animation with rotation
-			self.rotation += cos(time * 20) * 8 * xmov
-
-			angledVel.rotate -angle+90
-
-			self.x += angledVel[0] * dt
-			self.y += angledVel[1] * dt
+		// Derp is moving
+		if abs(self.vel[0]) > 50 then
+			self.currAnim = self.walkAnim
 		else
-			// derp is idle
 			self.currAnim = self.idleAnim
 		end if
+
+		closestPoint = []
+		for i in range(0, self.cols.len-1)
+			p = xyList(self)
+
+			if closestPoint.len > 0 then
+				currXDist = p.distanceTo(closestPoint)
+				distToPoint = p.distanceTo(self.cols[i])
+
+				if distToPoint < currXDist then
+					closestPoint = self.cols[i]
+				end if
+			else
+				closestPoint = self.cols[i]
+			end if
+		end for
+
+		if closestPoint.len > 1 then
+			if (self.y - self.image.height * self.scale[1] * 0.5) < closestPoint[1] and self.vel[1] < 0 then
+				self.grounded = true
+				self.y = closestPoint[1] + self.image.height * self.scale[1] * 0.5
+				self.vel[1] = 0
+			else
+				self.grounded = false
+			end if
+		end if
+
+		pos = worldRenderer.screenToWorld(xyList(self))
+		angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
+
+		angledVel = [0, 0]
+		angledVel[0] = self.vel[0]
+		angledVel[1] = self.vel[1]
+
+		self.rotation = -angle + 90
+
+		// simple walking animation with rotation
+		self.rotation += cos(time * 20) * 8 * xmov
+
+		angledVel.rotate -angle+90
+
+		self.x += angledVel[0] * pixelScale * dt
+		self.y += angledVel[1] * pixelScale * dt
 	else
 		if self.rover then
 			self.vel[0] = 0
@@ -167,7 +166,7 @@ Derp.update = function(dt)
 			end if
 		end if
 	end if
-
+	
 	self.collider.x = self.x
 	self.collider.y = self.y
 

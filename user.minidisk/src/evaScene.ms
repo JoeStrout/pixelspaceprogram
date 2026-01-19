@@ -13,13 +13,13 @@ setup = function
 
 	globals.derp = new Derp
 	derp.calculateScale worldRenderer.pixelScale
-	
-	derp.init 480, 320
 
 	//globals.rover = new Rover.rover
 	//rover.x = 480; rover.y = 320
 	//rover.init
 
+
+	derp.init 480, 320
 	//derp.rover = rover
 
 	display(2).mode = displayMode.pixel
@@ -53,18 +53,25 @@ mainLoop = function
 
 
 		derp.calculateScale worldRenderer.pixelScale
+		//rover.calculateScale worldRenderer.pixelScale
+
+		derp.cols = worldRenderer.visiblePoly
+
+		if timeScale > 0 then 
+			derp.update timeScale/60, worldRenderer.pixelScale
+			//rover.update timeScale/60
+		end if
+
+		if derp.inControl then
+			pos = worldRenderer.screenToWorld([derp.x, derp.y])
+			worldRenderer.rocketPos = pos
+		end if
 
 		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
 
-		derp.cols = worldRenderer.visiblePoly
 		//rover.leftWheel.cols = worldRenderer.visiblePoly
 		//rover.rightWheel.cols = worldRenderer.visiblePoly
 
-
-		if timeScale > 0 then 
-			derp.update timeScale/60
-			//rover.update timeScale/60
-		end if
 
 	end while
 	key.clear
@@ -73,6 +80,5 @@ end function
 if locals == globals then
 	setup
 	mainLoop
+	clear
 end if
-
-clear

@@ -21,7 +21,7 @@ wheel.init = function(x, y, rad)
  	super.init x, y, rad
 
 	self.pos = [x, y]
-	self.vel = [0,0]
+	self.vel = [0, 0]
 	self.cols = []
 end function
 
@@ -39,7 +39,7 @@ wheel.update = function(dt)
 		self.vel[1] += self.gravity * dt
 	end if
 
-	if self.vel[0] != 0 or self.vel[1] != 0 and self.cols.len > 0 then
+	if (self.vel[0] != 0 or self.vel[1] != 0) and self.cols.len > 0 then
 
 		self.grounded = false
 		closestPoint = []
@@ -74,15 +74,16 @@ wheel.update = function(dt)
 		angledVel[1] = self.vel[1]
 		angledVel.rotate -angle + 90
 
-		self.x += angledVel.x * dt 
-		self.y += angledVel.y * dt
+		self.x += angledVel[0] * dt 
+		self.y += angledVel[1] * dt
 	end if
 	//self.draw
 end function
 
 wheel.fixDistance = function(other)
 	distance = self.pos.distanceTo([other.x, other.y])
-	direction = self.pos.minus(other)
+	direction = [other.x - self.x, other.y - self.y]
+	//direction = self.pos.minus(other)
 
 	desiredDist = 48
 	minDist = 40
@@ -94,11 +95,11 @@ wheel.fixDistance = function(other)
 		
 		other.pos.minus direction.times(0.5)
 
-		self.x = mathUtil.lerp(self.x, self.pos[0], 10 * dt)
-		self.y = mathUtil.lerp(self.y, self.pos[1], 10 * dt)
+		self.x = self.pos[0] //mathUtil.lerp(self.x, self.pos[0], 10 * dt)
+		self.y = self.pos[1] //mathUtil.lerp(self.y, self.pos[1], 10 * dt)
 
-		other.x = mathUtil.lerp(other.x, other.pos[0], 10 * dt)
-		other.y = mathUtil.lerp(other.y, other.pos[1], 10 * dt)
+		other.x = other.pos[0] //mathUtil.lerp(other.x, other.pos[0], 10 * dt)
+		other.y = other.pos[1] //mathUtil.lerp(other.y, other.pos[1], 10 * dt)
 
 	else if distance < minDist then
 		diff = (minDist - distance) * 0.5
@@ -127,7 +128,7 @@ rover.moveFrict = 10
 rover.inControl = false
 
 rover.grounded = false
-
+rover.imageScale = 0.025
 rover.vel = null
 rover.collider = null
 
@@ -185,13 +186,13 @@ rover.update = function(dt)
 	vector = [wheelDist * 0.5, 0]
 	vector.rotate wheelAngle
 
-	center = [self.leftWheel[0] + vector[0], self.leftWheel[1] + vector[1]]
+	center = [self.leftWheel.x + vector[0], self.leftWheel.y + vector[1]]
 
 	pos = worldRenderer.screenToWorld(xyList(self))
 	angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
 
 	finalOffset = [-self.wheelDesiredDist,0]
-	finalOffset.rotate angleToPlanet
+	finalOffset.rotate angle
 
 	finalPos = [center[0] + finalOffset[0], center[1] + finalOffset[1]]
 
@@ -201,4 +202,14 @@ rover.update = function(dt)
 	self.collider.x = self.x
 	self.collider.y = self.y
 	//self.collider.draw
+end function
+
+rover.calculateScale = function(pixelScale)
+	imgScale = self.imageScale / pixelScale
+	if pixelScale <= 1 then
+		self.scale = imgScale
+	else
+		self.scale = 1
+		//self.image = derpIcon
+	end if
 end function
