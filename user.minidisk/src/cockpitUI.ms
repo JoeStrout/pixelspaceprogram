@@ -4,6 +4,7 @@
 import "importUtil"
 ensureImport "spacecraft"
 ensureImport "qa"
+ensureImport "displays"
 
 pic = {}
 
@@ -36,26 +37,27 @@ end function
 drawStagePanel = function(num1to8)
 	stage = ship.stages[num1to8]
 	x = 120 * (num1to8 - 1)
-	gfx.drawImage pic.stagePanelByType[stage.type], x, 0
+	g = displays.hud
+	g.drawImage pic.stagePanelByType[stage.type], x, 0
 	if stage.type == StageType.ENGINE then
 		w = pic.fuelBar.width * stage.fuelPct/100
 		h = pic.fuelBar.height
-		gfx.drawImage pic.fuelBar, 21, 5, w, h, 0, 0, w, h
+		g.drawImage pic.fuelBar, 21, 5, w, h, 0, 0, w, h
 	end if
-	gfx.drawImage pic.stageNums[num1to8], x+1, 3, -1, -1, 0, 0, -1, -1, "#AAAAAA"
+	g.drawImage pic.stageNums[num1to8], x+1, 3, -1, -1, 0, 0, -1, -1, "#AAAAAA"
 end function
 
 draw = function(demoMode=false)
-	gfx.drawImage pic.capsuleInstPanel, panelLeft, 0
+	displays.hud.drawImage pic.capsuleInstPanel, panelLeft, 0
 	for i in range(1, 8)
 		drawStagePanel i
 	end for
 end function
 
 if locals == globals then
+	displays.setup
 	init
 	globals.ship = Craft.Make(assembly.standardTestRocket)
-	clear
 	draw true
 end if
 

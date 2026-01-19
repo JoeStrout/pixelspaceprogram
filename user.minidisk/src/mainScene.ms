@@ -8,9 +8,11 @@ ensureImport "assembly"
 ensureImport "spacecraft"
 ensureImport "gameData"
 ensureImport "worldRenderer"
+ensureImport "cockpitUI"
 
 setup = function
-	clear
+	displays.setup
+	cockpitUI.init
 	globals.ship = Craft.Make(assembly.standardTestRocket)
 
 	if false then
@@ -33,13 +35,13 @@ setup = function
 	worldRenderer.setup
 	worldRenderer.refScreenPos = [480,320]
 	worldRenderer.zoomToScaleIdx 3
+	
+	cockpitUI.draw
 
-	display(2).mode = displayMode.pixel
-	display(2).clear
-	display(2).print "Thrust:         shift", 10, 50, color.silver, "small"
-	display(2).print "Rotate ship:    ← →", 10, 35, color.silver, "small"
-	display(2).print "Zoom in/out:    + -", 10, 20, color.silver, "small"
-	display(2).print "Time fast/slow: . ,", 10, 5, color.silver, "small"
+	displays.hud.print "Thrust:         shift", 10, 70, color.silver, "small"
+	displays.hud.print "Rotate ship:    ← →", 10, 55, color.silver, "small"
+	displays.hud.print "Zoom in/out:    + -", 10, 40, color.silver, "small"
+	displays.hud.print "Time fast/slow: . ,", 10, 25, color.silver, "small"
 	
 	globals.timeScale = 0
 end function
@@ -49,11 +51,9 @@ mainLoop = function
 		yield
 		// check inputs
 		if key.pressed("left shift") or key.pressed("right shift") then
-			ship.thrustF = 91000  // Apollo service module ~= 91 kN
-			// (but keep in mind our craft mass may be much too low...
-			// current model seems to weigh about 10 kN)
+			ship.throttle = 1
 		else
-			ship.thrustF = 0
+			ship.throttle = 0
 		end if
 		if key.available then
 			k = key.get

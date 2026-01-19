@@ -53,11 +53,6 @@ Orbit2D.pointAtGlobalAngle = function(theta, maxRadius=1E10)
 	return [r * cos(theta), r * sin(theta)]
 end function
 
-fullOrbitAnglePoints = range(0, 2*pi, 2*pi/64)
-Orbit2D.draw = function(gfx, color="#88FFFF")
-	worldRenderer.drawOrbit self, color
-end function
-
 
 // On mu: this is the planet's mass times the gravitational constant,
 // in m^3/sec^2.  It scales with the planet mass.  For Earth, the real

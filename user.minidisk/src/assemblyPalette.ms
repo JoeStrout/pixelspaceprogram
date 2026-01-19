@@ -41,14 +41,14 @@ end function
 		
 Palette.draw = function
 	if not self.wells then self.init
-	gfx.fillRect 0, 0, self.width, 640, "#666666"
+	displays.hud.fillRect 0, 0, self.width, 640, "#666666"
 	for well in self.wells
 		well.draw "#444444"
 		img = well.partDef.image
 		scale = min(64/img.height, 64/img.width)
 		h = img.height * scale
 		w = img.width * scale
-		gfx.drawImage img,
+		displays.hud.drawImage img,
 		   well.centerX - w/2, well.centerY - h/2, w, h,
 		   0, 0, -1, -1, "#CCCCCC"
 	end for

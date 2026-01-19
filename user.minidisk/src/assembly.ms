@@ -34,8 +34,22 @@ Component.Make = function(partDef)
 	noob.sprite.localBounds = new Bounds
 	noob.sprite.localBounds.width = partDef.image.width
 	noob.sprite.localBounds.height = partDef.image.height
+	if partDef isa EngineDef then
+		noob.fuelMass = partDef.fuelMass
+		noob.mass = function; return self.partDef.dryMass + self.fuelMass; end function
+	end if
 	return noob
 end function
+
+Component.mass = function
+	return self.partDef.mass
+end function
+
+// Fuel left, from 0 - 100 %  (call this only on engine or fuel tank parts!)
+Component.fuelPct = function
+	return self.fuelMass / self.partDef.fuelMass * 100
+end function
+
 
 Component.update = function
 	x = self.pos[0]; y = self.pos[1]
