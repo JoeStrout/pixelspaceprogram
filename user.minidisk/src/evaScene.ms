@@ -7,6 +7,7 @@ ensureImport "Rover"
 setup = function
 	clear
 
+	displays.setup
 	worldRenderer.setup
 	worldRenderer.refScreenPos = [480,320]
 	worldRenderer.zoomToScaleIdx 3
@@ -51,7 +52,6 @@ mainLoop = function
 		
 		if key.pressed("escape") then break
 
-
 		derp.calculateScale worldRenderer.pixelScale
 		//rover.calculateScale worldRenderer.pixelScale
 
@@ -63,8 +63,8 @@ mainLoop = function
 		end if
 
 		if derp.inControl then
-			pos = worldRenderer.screenToWorld([derp.x, derp.y])
-			worldRenderer.rocketPos = pos
+			//pos = worldRenderer.screenToWorld([derp.x, derp.y])
+			//worldRenderer.rocketPos = pos
 		end if
 
 		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]

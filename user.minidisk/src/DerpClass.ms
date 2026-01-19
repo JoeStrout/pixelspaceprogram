@@ -21,20 +21,20 @@ Derp.currAnim = Derp.idleAnim
 //Other wise it was to small to see even at 5m zoom
 Derp.imageScale = 0.025
 Derp.scale = 1
-Derp.moveSpeed = 150
-Derp.moveAccel = 15
-Derp.moveFrict = 25
+Derp.moveSpeed = 50
+Derp.moveAccel = 150
+Derp.moveFrict = 250
 
 Derp.lookDir = 1
 
 Derp.groundAccel = 20
 Derp.groundFrict = 25
 
-Derp.gravity = -850
+Derp.gravity = -98
 Derp.airAccel = 4
 Derp.airFrict = 2
 
-Derp.jumpPower = 8 * m
+Derp.jumpPower = 50
 
 Derp.grounded = false
 
@@ -57,7 +57,7 @@ Derp.init = function(x, y, rad=18)
 	self.collider = new CircleCollider.Circle
 	self.collider.init self.x, self.y, rad
 
-	display(4).sprites.push self
+	displays.outerSprites.sprites.push self
 end function
 
 Derp.update = function(dt, pixelScale)
@@ -68,15 +68,15 @@ Derp.update = function(dt, pixelScale)
 			self.moveAccel = self.groundAccel
 			self.moveFrict = self.groundFrict
 			self.vel[1] = 0
+
+			if dsl.keyPressed("space") then
+				self.vel[1] = self.jumpPower
+			end if
 		else
 			self.moveAccel = self.airAccel
 			self.moveFrict = self.airFrict
 
 			self.vel[1] += self.gravity * dt
-		end if
-
-		if dsl.keyPressed("space") then
-			self.vel[1] = self.jumpPower
 		end if
 
 		if dsl.keyPressed("e") and self.rover then
@@ -90,20 +90,16 @@ Derp.update = function(dt, pixelScale)
 			end if
 		end if
 
-		if dsl.keyPressed("p") then
-			print self.vel
-		end if
-
 		if xmov then
-			self.vel[0] = xmov * self.moveSpeed// mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
+			self.vel[0] = mathUtil.lerp(self.vel[0], xmov * self.moveSpeed, self.moveAccel * dt)
 
 			self.lookDir = sign(xmov)
 		else
-			self.vel[0] = 0//mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
+			self.vel[0] = mathUtil.lerp(self.vel[0], 0, self.moveFrict * dt)
 		end if
 
 		// Derp is moving
-		if abs(self.vel[0]) > 50 then
+		if abs(self.vel[0]) > 350 then
 			self.currAnim = self.walkAnim
 		else
 			self.currAnim = self.idleAnim
@@ -128,7 +124,8 @@ Derp.update = function(dt, pixelScale)
 		if closestPoint.len > 1 then
 			if (self.y - self.image.height * self.scale[1] * 0.5) < closestPoint[1] and self.vel[1] < 0 then
 				self.grounded = true
-				self.y = closestPoint[1] + self.image.height * self.scale[1] * 0.5
+				ty =  closestPoint[1] + self.image.height * self.scale[1] * 0.5
+				self.y = mathUtil.lerp(self.y, ty, 50 * dt)
 				self.vel[1] = 0
 			else
 				self.grounded = false
@@ -149,8 +146,8 @@ Derp.update = function(dt, pixelScale)
 
 		angledVel.rotate -angle+90
 
-		self.x += angledVel[0] * pixelScale * dt
-		self.y += angledVel[1] * pixelScale * dt
+		self.x += angledVel[0] * dt / pixelScale
+		self.y += angledVel[1] * dt / pixelScale
 	else
 		if self.rover then
 			self.vel[0] = 0
