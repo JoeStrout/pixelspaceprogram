@@ -47,6 +47,11 @@ Craft.orbit = null
 Craft.engineSound = engineSound
 Craft._cachedImage = null
 Craft.stages = null
+Craft.alt = 0
+Craft.speed = 0
+Craft.groundR = 0
+Craft.launched = false	// false: on launch pad; true: flyin' free
+Craft.crashed = false	// true: kaboom
 
 Craft.Make = function(assembly)
 	craft = new self
@@ -79,6 +84,11 @@ Craft.updateOrbit = function
 end function
 
 Craft.update = function(dt)
+	if self.crashed then
+		// ToDo: update explosion effects?
+		return
+	end if
+	
 	// calculate total acceleration (gravity plus thrust)
 	r = sqrt(self.pos[0]^2 + self.pos[1]^2)
 	g = mu_planet / r^2  // acceleration due to gravity, in m/sec^2
@@ -87,6 +97,8 @@ Craft.update = function(dt)
 	
 	if self.throttle > 0 then
 		thrusting = true
+		self.launched = true
+		
 		// HACK for now: assume component 0 is our engine,
 		// and that corresponds to stage 1.
 		engineComp = self.assembly.components[0]
@@ -94,7 +106,7 @@ Craft.update = function(dt)
 		qa.assert engineDef isa EngineDef
 		stageNum = 1
 		
-		// Also HACK for now: assume 0.5 atm pressuer
+		// Also HACK for now: assume 0.5 atm pressure
 		atmPressure = 0.5
 		
 		thrustN = engineDef.thrust(self.throttle, atmPressure)
@@ -118,9 +130,13 @@ Craft.update = function(dt)
 		acc = [
 			gDir[0] * g + fwdDir[0] * thrustAcc,
 			gDir[1] * g + fwdDir[1] * thrustAcc ]
-	else
+	else if self.launched then
 		thrusting = false
 		acc = [gDir[0] * g, gDir[1] * g]
+	else
+		// still on launch pad, all's quiet
+		thrusting = false
+		acc = [0, 0]
 	end if
 	
 	// then integrate to update our state
@@ -130,6 +146,21 @@ Craft.update = function(dt)
 	self.pos[1] += self.vel[1] * dt
 	self.angle += self.angVec * dt
 	
+	// store speed and altitude, and check for crashing into the ground
+	self.upAngle = atan(self.pos.y, self.pos.x)
+	self.groundR = worldRenderer.worldRadiusAtAngle(self.upAngle)
+	self.alt = sqrt(self.pos.x^2 + self.pos.y^2) - self.groundR
+	self.speed = ship.vel.magnitude
+	if self.launched and self.alt <= 0 then
+		self.engineSound.stop
+		self.pos = self.pos.normalized.times(self.groundR)
+		if self.speed > 20 then
+			self.crashed = true
+			return
+		end if
+		self.launched = false	// landed!
+	end if
+
 	// and if we're under thrust, update the orbit; otherwise,
 	// lock to the orbit radius
 	if thrusting then
@@ -148,14 +179,16 @@ end function
 
 drawInfo = function(craft, timeScale)
 	text.clear
-	alt = sqrt(craft.pos.x^2 + craft.pos.y^2) - 6000*km // (radius of planet)
-	altStr = "000000" + str(abs(round(alt/1000, 3))) + "000"
+	if craft.crashed then
+		text.row = 13; text.column = 30; print "BOOM!!!"
+	end if
+
+	altStr = "000000" + str(abs(round(craft.alt/1000, 3))) + "000"
 	dotPos = altStr.indexOf(".")
 	altStr = altStr[dotPos-6:dotPos+4]
-	if alt < 0 then altStr = "-" + altStr[1:]
+	if craft.alt < 0 then altStr = "-" + altStr[1:]
 	text.row = 25; text.column = 25; print "ALT: " + altStr + " km"
-	speed = ship.vel.magnitude
-	speedStr = "000000" + str(round(speed, 3)) + "000"
+	speedStr = "000000" + str(round(craft.speed, 3)) + "000"
 	dotPos = speedStr.indexOf(".")
 	speedStr = speedStr[dotPos-6:dotPos+4]
 	text.row = 24; text.column = 25; print "SPD: " + speedStr + " m/s"

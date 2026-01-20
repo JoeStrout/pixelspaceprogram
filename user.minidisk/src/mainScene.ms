@@ -43,7 +43,7 @@ setup = function
 	displays.hud.print "Zoom in/out:    + -", 10, 40, color.silver, "small"
 	displays.hud.print "Time fast/slow: . ,", 10, 25, color.silver, "small"
 	
-	globals.timeScale = 0
+	globals.timeScale = 1
 end function
 
 mainLoop = function
