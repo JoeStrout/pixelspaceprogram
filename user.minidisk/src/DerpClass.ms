@@ -21,16 +21,16 @@ Derp.currAnim = Derp.idleAnim
 //Other wise it was to small to see even at 5m zoom
 Derp.imageScale = 0.025
 Derp.scale = 1
-Derp.moveSpeed = 50
-Derp.moveAccel = 150
-Derp.moveFrict = 250
+Derp.moveSpeed = 25
+Derp.moveAccel = 15
+Derp.moveFrict = 25
 
 Derp.lookDir = 1
 
 Derp.groundAccel = 20
 Derp.groundFrict = 25
 
-Derp.gravity = -98
+Derp.gravity = -300
 Derp.airAccel = 4
 Derp.airFrict = 2
 
@@ -44,13 +44,13 @@ Derp.targetScale = 0.3
 Derp.vel = [0, 0]
 Derp.collider = null
 Derp.rover = null
+Derp.pos = [0, 0]
 
 Derp.cols = []
 Derp.planet = null
 
 Derp.init = function(x, y, rad=18)
-	self.x = x
-	self.y = y
+	//self.pos= [x, y]
 
 	self.vel = [0, 0]
 
@@ -61,6 +61,8 @@ Derp.init = function(x, y, rad=18)
 end function
 
 Derp.update = function(dt, pixelScale)
+	self.pos = xyList(self)
+
 	if self.inControl then
 		xmov = key.axis("Horizontal")
 
@@ -99,7 +101,7 @@ Derp.update = function(dt, pixelScale)
 		end if
 
 		// Derp is moving
-		if abs(self.vel[0]) > 350 then
+		if abs(self.vel[0]) > 15 then
 			self.currAnim = self.walkAnim
 		else
 			self.currAnim = self.idleAnim

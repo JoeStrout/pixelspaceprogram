@@ -19,7 +19,7 @@ setup = function
 	//rover.x = 480; rover.y = 320
 	//rover.init
 
-
+	//xy = worldRenderer.screenToWorld([480, 320])
 	derp.init 480, 320
 	//derp.rover = rover
 
@@ -63,8 +63,7 @@ mainLoop = function
 		end if
 
 		if derp.inControl then
-			//pos = worldRenderer.screenToWorld([derp.x, derp.y])
-			//worldRenderer.rocketPos = pos
+			//worldRenderer.rocketPos = derp.pos
 		end if
 
 		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
