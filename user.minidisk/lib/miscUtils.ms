@@ -58,6 +58,13 @@ list.normalize = function
 	end if
 end function
 
+// Return a (new) normalized version of this vector
+list.normalized = function
+	m = sqrt(self[0]^2 + self[1]^2)
+	if m != 0 then return [self[0] / m, self[1] / m]
+	return self[:2]
+end function
+
 list.distanceTo = function(other)
 	dx = other[0] - self[0]
 	dy = other[1] - self[1]
