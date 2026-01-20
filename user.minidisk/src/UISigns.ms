@@ -1,7 +1,7 @@
 
 frames = {}
 
-for i in ["m", "km", "Mkm"] //, "ms", "kms", "Mkms"]
+for i in ["m", "km", "Mkm", "ms", "kms", "Mkms"]
 	frames[i] = file.loadImage("/usr/pics/UI/altitude/" + i + ".png")
 end for
 

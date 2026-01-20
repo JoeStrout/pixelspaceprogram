@@ -11,6 +11,7 @@ ensureImport "UISigns"
 pic = {}
 
 altSprites = []
+spdSprites = []
 uiSigns = []
 
 init = function
@@ -46,13 +47,30 @@ init = function
 		outer.altSprites.push num
 	end for
 
+	for i in range(0, 5)
+		num = new UINumber.Number
+		num.y = 582
+		num.x = 754 + (17 * i) + (8 * (i >= 3))
+		displays.hudSprites.sprites.push num
+		outer.spdSprites.push num
+	end for
+
 	altS = new UISigns.Sign
 	altS.y = 610
 	altS.x = 865
 	altS.setSign "m"
 
+	spdS = new UISigns.Sign
+	spdS.y = 582
+	spdS.x = 865
+	spdS.setSign "ms"
+
+
 	displays.hudSprites.sprites.push altS
 	uiSigns.push altS
+
+	displays.hudSprites.sprites.push spdS
+	uiSigns.push spdS
 
 end function
 
@@ -111,9 +129,7 @@ drawShipInfo = function(spd, alt)
 		finalAlt = spl[0] + "000"
 	end if
 
-	// Speed calculation
-
-	// Drawing stats
+	// Drawing altitude
 	i = 0
 	for s in finalAlt
 		altSprites[i].setNumber s
@@ -121,6 +137,44 @@ drawShipInfo = function(spd, alt)
 	end for
 
 	uiSigns[0].setSign altSign
+
+	// Speed calculation
+	spdSign = ""
+
+	spd = abs(spd)
+
+	if spd < 1000 then
+		spdStr = str(round(spd, 3))
+		spdSign = "ms"
+	else if spd/1000 < 1000 then
+		spdStr = str(round(spd/1000, 3))
+		spdSign = "kms"
+	else
+		spdStr = str(round(spd/1000/1000, 3))
+		spdSign = "Mkms"
+	end if
+
+	spl = spdStr.split(".")
+
+	spl[0] = "0" * (3 - spl[0].len) + spl[0]
+	if spl.len > 1 then
+		spl[1] = spl[1] + "0" * (3 - spl[1].len)
+
+		finalSpd = spl[0] + spl[1]
+	else
+		finalSpd = spl[0] + "000"
+	end if
+
+	// Speed calculation
+
+	// Drawing stats
+	i = 0
+	for s in finalSpd
+		spdSprites[i].setNumber s
+		i += 1
+	end for
+
+	uiSigns[1].setSign spdSign
 
 end function
 
