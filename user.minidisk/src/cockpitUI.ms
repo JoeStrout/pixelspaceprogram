@@ -6,9 +6,12 @@ ensureImport "spacecraft"
 ensureImport "qa"
 ensureImport "displays"
 ensureImport "UINumber"
+ensureImport "UISigns"
 
 pic = {}
+
 altSprites = []
+uiSigns = []
 
 init = function
 	if pic.len then return // already initialized
@@ -38,10 +41,19 @@ init = function
 	for i in range(0, 5)
 		num = new UINumber.Number
 		num.y = 618
-		num.x = 754 + 17 * i
+		num.x = 754 + (17 * i) + (8 * (i >= 3))
 		displays.hudSprites.sprites.push num
 		outer.altSprites.push num
 	end for
+
+	altS = new UISigns.Sign
+	altS.y = 610
+	altS.x = 865
+	altS.setSign "m"
+
+	displays.hudSprites.sprites.push altS
+	uiSigns.push altS
+
 end function
 
 
@@ -66,17 +78,20 @@ draw = function(demoMode=false)
 end function
 
 drawShipInfo = function(spd, alt)
-	sign = ""
+	// Altitude calculation
+	altSign = ""
+
+	alt = abs(alt)
 
 	if alt < 1000 then
 		altStr = str(round(alt, 3))
-		sign = "m"
+		altSign = "m"
 	else if alt/1000 < 1000 then
 		altStr = str(round(alt/1000, 3))
-		sign = "km"
+		altSign = "km"
 	else
 		altStr = str(round(alt/1000/1000, 3))
-		sign = "Mkm"
+		altSign = "Mkm"
 	end if
 
 	// Add 0 before
@@ -96,11 +111,16 @@ drawShipInfo = function(spd, alt)
 		finalAlt = spl[0] + "000"
 	end if
 
+	// Speed calculation
+
+	// Drawing stats
 	i = 0
 	for s in finalAlt
 		altSprites[i].setNumber s
 		i += 1
 	end for
+
+	uiSigns[0].setSign altSign
 
 end function
 

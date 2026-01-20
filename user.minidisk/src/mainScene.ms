@@ -93,7 +93,7 @@ mainLoop = function
 		worldRenderer.drawOrbit ship.orbit
 		//spacecraft.drawInfo ship, timeScale
 
-		cockpitUI.drawShipInfo ship.speed, ship.alt 
+		cockpitUI.drawShipInfo ship.speed, ship.alt
 	end while
 	key.clear
 end function
