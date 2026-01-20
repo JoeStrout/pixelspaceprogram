@@ -5,8 +5,10 @@ import "importUtil"
 ensureImport "spacecraft"
 ensureImport "qa"
 ensureImport "displays"
+ensureImport "UINumber"
 
 pic = {}
+altSprites = []
 
 init = function
 	if pic.len then return // already initialized
@@ -31,6 +33,15 @@ init = function
 	pic.stagePanelByType[StageType.CHUTES] = pic.stagePanelBlank // ToDo
 	
 	outer.panelLeft = 960 - pic.capsuleInstPanel.width
+
+	// Setting up numbers for altitude and speed
+	for i in range(0, 5)
+		num = new UINumber.Number
+		num.y = 618
+		num.x = 754 + 17 * i
+		displays.hudSprites.sprites.push num
+		outer.altSprites.push num
+	end for
 end function
 
 
@@ -52,6 +63,45 @@ draw = function(demoMode=false)
 	for i in range(1, 8)
 		drawStagePanel i
 	end for
+end function
+
+drawShipInfo = function(spd, alt)
+	sign = ""
+
+	if alt < 1000 then
+		altStr = str(round(alt, 3))
+		sign = "m"
+	else if alt/1000 < 1000 then
+		altStr = str(round(alt/1000, 3))
+		sign = "km"
+	else
+		altStr = str(round(alt/1000/1000, 3))
+		sign = "Mkm"
+	end if
+
+	// Add 0 before
+	// str = "0" * (3 - t.len) + str
+
+	// Add 0 after
+	// str = t + "0" * (3 - t.len)
+
+	spl = altStr.split(".")
+
+	spl[0] = "0" * (3 - spl[0].len) + spl[0]
+	if spl.len > 1 then
+		spl[1] = spl[1] + "0" * (3 - spl[1].len)
+
+		finalAlt = spl[0] + spl[1]
+	else
+		finalAlt = spl[0] + "000"
+	end if
+
+	i = 0
+	for s in finalAlt
+		altSprites[i].setNumber s
+		i += 1
+	end for
+
 end function
 
 if locals == globals then

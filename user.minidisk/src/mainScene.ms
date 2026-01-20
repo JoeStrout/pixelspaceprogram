@@ -77,6 +77,10 @@ mainLoop = function
 			ship.angle -= pi/60
 		end if
 		
+		if key.pressed("p") then
+			text.print displays.hudSprites.sprites
+		end if
+
 		if key.pressed("escape") then break
 		
 		// update simulation
@@ -87,7 +91,9 @@ mainLoop = function
 		worldRenderer.rocketPos = ship.pos
 		worldRenderer.update
 		worldRenderer.drawOrbit ship.orbit
-		spacecraft.drawInfo ship, timeScale
+		//spacecraft.drawInfo ship, timeScale
+
+		cockpitUI.drawShipInfo ship.speed, ship.alt 
 	end while
 	key.clear
 end function
