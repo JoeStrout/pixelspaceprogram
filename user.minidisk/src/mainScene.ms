@@ -86,11 +86,9 @@ mainLoop = function
 		if timeScale > 0 then ship.update timeScale/60
 		
 		// update rocket display
-		worldRenderer.rocketSprite.rotation = ship.angle * 180/pi	
 		worldRenderer.rocketPos = ship.pos
 		worldRenderer.update
-		worldRenderer.drawOrbit ship.orbit
-		//spacecraft.drawInfo ship, timeScale
+		if not ship.crashed then worldRenderer.drawOrbit ship.orbit
 
 		cockpitUI.drawShipInfo ship.speed, ship.alt
 	end while

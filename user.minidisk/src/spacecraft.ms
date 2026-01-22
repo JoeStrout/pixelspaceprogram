@@ -43,6 +43,7 @@ Craft.vel = null		// [vx, vy] velocity in meters/sec
 Craft.angle = 0			// rotation angle in radians
 Craft.angVec = 0		// angular velocity, in radians/sec
 Craft.throttle = 0		// current throttle (0-1)
+Craft.thrusting = false // true when main engines actually burning
 Craft.orbit = null
 Craft.engineSound = engineSound
 Craft._cachedImage = null
@@ -96,7 +97,7 @@ Craft.update = function(dt)
 	gDir.normalize
 	
 	if self.throttle > 0 then
-		thrusting = true
+		self.thrusting = true
 		self.launched = true
 		
 		// HACK for now: assume component 0 is our engine,
@@ -114,7 +115,7 @@ Craft.update = function(dt)
 		if engineComp.fuelMass < 0 then
 			engineComp.fuelMass = 0
 			thrustN = 0
-			thrusting = false
+			self.thrusting = false
 		else
 			ship.stages[stageNum].fuelPct = engineComp.fuelPct
 			cockpitUI.drawStagePanel stageNum
@@ -131,11 +132,11 @@ Craft.update = function(dt)
 			gDir[0] * g + fwdDir[0] * thrustAcc,
 			gDir[1] * g + fwdDir[1] * thrustAcc ]
 	else if self.launched then
-		thrusting = false
+		self.thrusting = false
 		acc = [gDir[0] * g, gDir[1] * g]
 	else
 		// still on launch pad, all's quiet
-		thrusting = false
+		self.thrusting = false
 		acc = [0, 0]
 	end if
 	
@@ -163,7 +164,7 @@ Craft.update = function(dt)
 
 	// and if we're under thrust, update the orbit; otherwise,
 	// lock to the orbit radius
-	if thrusting then
+	if self.thrusting then
 		self.updateOrbit
 		if not self.engineSound.isPlaying then self.engineSound.play
 	else

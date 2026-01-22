@@ -2,9 +2,9 @@
 
 import "importUtil"
 ensureImport "listUtil"
-import "LookupTable"
+ensureImport "LookupTable"
 ensureImport "displays"
-
+ensureImport "rocketRenderer"
 
 // Handy units:
 globals.cm = 0.01
@@ -29,20 +29,6 @@ scales = [10*cm, 25*cm, 50*cm, m, 3*m, 10*m, 30*m, 100*m, 300*m, km,
   3*km, 10*km, 30*km, 100*km, 300*km, 1000*km]
 scaleIdx = 0
 pixelScale = scales[scaleIdx]  // m per pixel
-
-rocketIcon = file.loadImage("/usr/pics/rocketIcon.png")
-
-rocketSprite = new Sprite
-rocketSprite.image = null
-// Note: rocket is ~500 pixels tall, and is assumed to
-// be 50 meters tall.  So its native scale is:
-rocketSprite.imageScale = 0.1 // m/pixel
-
-// examples:
-// scale=1 --> 500 pixels tall --> 0.1 m/pixel
-// scale=0.1 --> 50 pixels tall --> 1 m/pixel
-// scale=0.01 --> 5 pixels tall --> 10 m/pixel
-
 
 drawCircle = function(screenCenter, screenRadius, color)
 	left = screenCenter[0] - screenRadius
@@ -116,22 +102,6 @@ worldRadiusAtAngle = function(angleInRadians)
 	   terrain2.lookup(angleInRadians*10000) * 100 +
 	   terrain3.lookup(angleInRadians*100000) * 10 +
 	   terrain3.lookup(angleInRadians*1000001) * 1
-end function
-
-// drawRocket: draw our rocket, at the given screen position
-// and current scale.  If we're zoomed too far out, switch
-// to a constant-size icon.
-drawRocket = function(refScreenPos)
-	rocketSprite.x = refScreenPos[0]
-	rocketSprite.y = refScreenPos[1]
-	imgScale = rocketSprite.imageScale / pixelScale
-	if pixelScale <= 1 then
-		rocketSprite.scale = imgScale
-		rocketSprite.image = ship.image
-	else
-		rocketSprite.scale = 1
-		rocketSprite.image = rocketIcon
-	end if
 end function
 
 drawScaleBar = function
@@ -356,12 +326,12 @@ rocketPos = [0, worldRadiusAtAngle(pi/2)+25]  // position of the rocket in the w
 refScreenPos = [480, 200]  // position of the rocket on screen, in pixels
 
 setup = function
-	displays.outerSprites.sprites.push rocketSprite
+	rocketRenderer.setup
 end function
 
 update = function
 	drawWorld refScreenPos, [-rocketPos[0], -rocketPos[1]]
-	drawRocket refScreenPos
+	rocketRenderer.update refScreenPos, pixelScale
 	drawScaleBar
 	
 //	visRange = getVisibleAngleRange
@@ -422,7 +392,6 @@ if locals == globals then
 	runUnitTests
 	displays.setup
 	setup
-	rocketSprite.rotation = 90
 	while true
 		update
 		k = key.get.code
