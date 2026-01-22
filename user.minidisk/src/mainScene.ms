@@ -59,7 +59,6 @@ mainLoop = function
 			k = key.get
 			if (k == "." or k == ">") and timeScale < 256 then
 				if timeScale > 0 then globals.timeScale *= 2 else globals.timeScale = 1
-				print "timeScale: " + timeScale
 			else if k == "," or k == "<" then
 				if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
 			else if k == "+" or k == "=" then
