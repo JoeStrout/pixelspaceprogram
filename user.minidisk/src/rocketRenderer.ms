@@ -47,12 +47,16 @@ setup = function
 
 end function
 
-shipLocalToScreen = function(localPos, shipScreenPos, pixelScale)
-	ang = ship.angle
+// Convert ship-local position to screen position, accounting for both
+// ship rotation and camera rotation/scale.
+shipLocalToScreen = function(localPos, shipScreenPos, camera)
+	// Combined angle: ship rotation minus camera rotation (in radians)
+	ang = ship.angle - camera.local.rotation * pi/180
 	cosAng = cos(ang)
 	sinAng = sin(ang)
-	x = localPos[0] / pixelScale
-	y = localPos[1] / pixelScale
+	scale = camera.local.scale
+	x = localPos[0] / scale
+	y = localPos[1] / scale
 	return [
 		shipScreenPos[0] + x * cosAng - y * sinAng,
 		shipScreenPos[1] + x * sinAng + y * cosAng ]
@@ -61,12 +65,12 @@ end function
 SmokeSprite = new Sprite
 SmokeSprite.startTime = 0
 SmokeSprite.v = [0,1]  // (pixels/sec)
-SmokeSprite.update = function(shipPos, pixelScale, time)
+SmokeSprite.update = function(shipPos, scale, time)
 	age = time - self.startTime
-	d = age / pixelScale
+	d = age / scale
 	self.x = shipPos[0] + self.v[0] * d
 	self.y = shipPos[1] + self.v[1] * d
-	self.scale = 0.5 / pixelScale
+	self.scale = 0.5 / scale
 	alpha = cos(age / 2)
 	if alpha <= 0 then
 		self.tint = color.clear
@@ -86,7 +90,7 @@ SmokeSprite.Make = function(now)
 	return ss
 end function
 
-updateExplosion = function(screenPos, pixelScale)
+updateExplosion = function(screenPos, camera)
 	if not smokeSprites then
 		displays.outerSprites.sprites.removeVal rocketSprite
 		for es in exhaustSprites
@@ -100,29 +104,32 @@ updateExplosion = function(screenPos, pixelScale)
 		SmokeSprite.Make now + extraTime
 		extraTime += 0.25
 	end while
-	
+
+	scale = camera.local.scale
 	for i in range(smokeSprites.len-1, 0, -1)
-		if not smokeSprites[i].update(screenPos, pixelScale, now) then
+		if not smokeSprites[i].update(screenPos, scale, now) then
 			smokeSprites.remove i
-		end if		
+		end if
 	end for
-	
+
 end function
 
-// update: draw our rocket, at the given screen position
-// and pixel scale.  If we're zoomed too far out, switch
-// to a constant-size icon.
-update = function(screenPos, pixelScale)
+// update: draw our rocket, at the given screen position,
+// using the camera transform for scale and rotation.
+// If we're zoomed too far out, switch to a constant-size icon.
+update = function(screenPos, camera)
 	if ship.crashed then
-		updateExplosion screenPos, pixelScale
+		updateExplosion screenPos, camera
 		return
 	end if
-	
+
+	pixelScale = camera.local.scale
 	rocketSprite.x = screenPos[0]
 	rocketSprite.y = screenPos[1]
-	degrees = ship.angle * 180/pi
+	// Ship rotation on screen = ship angle minus camera rotation
+	degrees = ship.angle * 180/pi - camera.local.rotation
 	rocketSprite.rotation = degrees
-	
+
 	imgScale = rocketSprite.imageScale / pixelScale
 	if pixelScale <= 1 then
 		rocketSprite.scale = imgScale
@@ -131,7 +138,7 @@ update = function(screenPos, pixelScale)
 			es = exhaustSprites[i]
 			if ship.thrusting then
 				es.scale = imgScale * ship.throttle
-				p = shipLocalToScreen(exhaustPos[i], screenPos, pixelScale)
+				p = shipLocalToScreen(exhaustPos[i], screenPos, camera)
 				es.x = p[0]
 				es.y = p[1]
 				es.scale = imgScale

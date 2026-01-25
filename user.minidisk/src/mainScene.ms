@@ -33,14 +33,15 @@ setup = function
 	ship.updateOrbit
 
 	worldRenderer.setup
-	worldRenderer.refScreenPos = [480,320]
+	worldRenderer.refScreenPos = [370,320]
 	worldRenderer.zoomToScaleIdx 3
 	
 	cockpitUI.draw
 
-	displays.hud.print "Thrust:         shift", 10, 70, color.silver, "small"
-	displays.hud.print "Rotate ship:    ← →", 10, 55, color.silver, "small"
-	displays.hud.print "Zoom in/out:    + -", 10, 40, color.silver, "small"
+	displays.hud.print "Thrust:         shift", 10, 85, color.silver, "small"
+	displays.hud.print "Rotate ship:    ← →", 10, 70, color.silver, "small"
+	displays.hud.print "Zoom in/out:    + -", 10, 55, color.silver, "small"
+	displays.hud.print "Rotate view:    [ ]", 10, 40, color.silver, "small"
 	displays.hud.print "Time fast/slow: . ,", 10, 25, color.silver, "small"
 	
 	globals.timeScale = 1
@@ -65,6 +66,10 @@ mainLoop = function
 				worldRenderer.zoomIn
 			else if k == "-" or k == "_" then
 				worldRenderer.zoomOut
+			else if k == "[" or k == "{" then
+				worldRenderer.camera.rotate 15
+			else if k == "]" or k == "}" then
+				worldRenderer.camera.rotate -15
 			end if
 		end if
 		// Rotation is tricky -- if we simulate this realistically, while the

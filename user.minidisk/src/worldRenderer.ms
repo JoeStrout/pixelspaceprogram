@@ -4,7 +4,9 @@ import "importUtil"
 ensureImport "listUtil"
 ensureImport "LookupTable"
 ensureImport "displays"
+ensureImport "spacecraft"
 ensureImport "rocketRenderer"
+ensureImport "transform"
 
 // Handy units:
 globals.cm = 0.01
@@ -40,20 +42,14 @@ end function
 // worldToScreen: given an [x,y] position in absolute (meter) coordinates,
 // return the corresponding screen (pixel) coordinates.
 worldToScreen = function(pos)
-	return [
-		(pos[0] - rocketPos[0]) / pixelScale + refScreenPos[0],
-		(pos[1] - rocketPos[1]) / pixelScale + refScreenPos[1] ]
+	local = camera.inverseTransformPoint(pos[0], pos[1])
+	return [local[0] + refScreenPos[0], local[1] + refScreenPos[1]]
 end function
 
-// drawWorld: draw the world, relative to a reference
-// position (usually the player position).  Given:
-//   refScreenPos: [x,y] of the reference on screen (pixels)
-//   refWorldPos: [x,y] of the reference relative to the
-//     center of the world (meters)
-drawWorld = function(refScreenPos, refWorldPos)
-	worldCtrPix = [
-	  refScreenPos[0] + refWorldPos[0] / pixelScale,
-	  refScreenPos[1] + refWorldPos[1] / pixelScale ]
+// drawWorld: draw the world (planet, atmosphere, terrain).
+// Uses the camera transform to handle position, scale, and rotation.
+drawWorld = function
+	worldCtrPix = worldToScreen([0, 0])  // screen position of world center
 	displays.exterior.clear color.clear
 	worldRadPix = worldRadius / pixelScale
 	
@@ -70,26 +66,27 @@ drawWorld = function(refScreenPos, refWorldPos)
 	if pixelScale >= 3000 then
 		drawCircle worldCtrPix, worldRadPix, color.green
 	else
-		drawTerrain worldCtrPix
+		drawTerrain
 	end if
 end function
 
 // drawTerrain: draw the visible section of the ground by actually
 // sampling the terrain height along the visible arc, and drawing
 // it as a polygon.
-drawTerrain = function(worldCtrPix)
-	x = worldCtrPix[0]; y = worldCtrPix[1]
+drawTerrain = function
 	radRange = getVisibleAngleRange  // angle range, in radians
 	poly = []
 	ang = radRange[0]
 	dang = (radRange[1] - radRange[0]) / 100
 	while ang < radRange[1]
-		r = worldRadiusAtAngle(ang) / pixelScale
-		poly.push [x + r * cos(ang), y + r * sin(ang)]
+		r = worldRadiusAtAngle(ang)
+		// Calculate world position, then convert to screen
+		worldPos = [r * cos(ang), r * sin(ang)]
+		poly.push worldToScreen(worldPos)
 		ang += dang
 	end while
-	poly.push [poly[-1][0], 0]
-	poly.push [poly[0][0], 0]
+	// Close polygon through the world center (works at any rotation)
+	poly.push worldToScreen([0, 0])
 	displays.exterior.fillPoly poly, color.green
 
 	outer.visiblePoly = poly
@@ -120,9 +117,8 @@ end function
 // screenToWorld: inverse of worldToScreen, converts screen pixel
 // coordinates back to absolute (meter) world coordinates.
 screenToWorld = function(screenPos)
-	return [
-		(screenPos[0] - refScreenPos[0]) * pixelScale + rocketPos[0],
-		(screenPos[1] - refScreenPos[1]) * pixelScale + rocketPos[1] ]
+	local = [screenPos[0] - refScreenPos[0], screenPos[1] - refScreenPos[1]]
+	return camera.transformPoint(local[0], local[1])
 end function
 
 // getVisibleAngleRange: calculate the range of orbit angles that could
@@ -317,21 +313,33 @@ zoomToScaleIdx = function(scaleIdx)
 	if scaleIdx >= scales.len then scaleIdx = scales.len - 1
 	outer.scaleIdx = scaleIdx
 	outer.pixelScale = scales[scaleIdx]
+	camera.setScale pixelScale, false
 end function	
 
 zoomOut = function; zoomToScaleIdx scaleIdx + 1; end function
 zoomIn  = function; zoomToScaleIdx scaleIdx - 1; end function
 
-rocketPos = [0, worldRadiusAtAngle(pi/2)+25]  // position of the rocket in the world, in meters
 refScreenPos = [480, 200]  // position of the rocket on screen, in pixels
+
+// Camera transform: position is where we're looking (rocket position in meters),
+// scale is meters per pixel, rotation allows rotating the view.
+camera = Transform.Make(0, worldRadiusAtAngle(pi/2)+25, 0, pixelScale, "camera")
+
+// rocketPos is kept for external compatibility; it's synced to camera in update()
+rocketPos = [camera.local.x, camera.local.y]
 
 setup = function
 	rocketRenderer.setup
 end function
 
 update = function
-	drawWorld refScreenPos, [-rocketPos[0], -rocketPos[1]]
-	rocketRenderer.update refScreenPos, pixelScale
+	// Sync camera transform from rocketPos (which external code may have updated)
+	camera.local.x = rocketPos[0]
+	camera.local.y = rocketPos[1]
+	camera.markStale
+
+	drawWorld
+	rocketRenderer.update refScreenPos, camera
 	drawScaleBar
 	
 //	visRange = getVisibleAngleRange
@@ -390,19 +398,35 @@ end function
 
 if locals == globals then
 	runUnitTests
+	ensureImport "orbit"
 	displays.setup
+	globals.ship = Craft.Make(assembly.standardTestRocket)
 	setup
+
+	// Create a nice elliptical orbit for testing
+	shipPos = screenToWorld(refScreenPos)
+	testOrbit = new Orbit2D
+	testOrbit.compute shipPos, [2000,6000], orbit.mu_planet
+
 	while true
+		yield
 		update
-		k = key.get.code
-		if k == 17 or k == 20 then
-			zoomOut
-		else if k == 18 or k == 19 then
+		drawOrbit testOrbit, color.yellow
+		k = key.get
+		if k == "+" or k == "=" then
 			zoomIn
-		else if k == 27 or char(k) == "q" then
+		else if k == "-" or k == "_" then
+			zoomOut
+		else if k == "[" or k == "{" then
+			camera.rotate 15
+		else if k == "]" or k == "}" then
+			camera.rotate -15
+		else if k.code == 27 or k == "q" then
 			break
+		else if k != "" then
+			print "Unknown key: " + k + " (" + k.code + ")"
 		end if
-		
+
 	end while
 	text.row = 4
 end if

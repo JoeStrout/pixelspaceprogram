@@ -161,6 +161,31 @@ Transform.setScale = function(scale, updateNow=true)
 	if updateNow then self.update
 end function
 
+Transform.translate = function(deltaX, deltaY, updateNow=true)
+	self.local.x += deltaX
+	self.local.y += deltaY
+	self.markStale
+	if updateNow then self.update
+end function
+
+Transform.rotate = function(deltaRot, updateNow=true)
+	self.local.rotation += deltaRot
+	self.markStale
+	if updateNow then self.update
+end function
+
+Transform.addToScale = function(deltaScale, updateNow=true)
+	self.local.scale += deltaScale
+	self.markStale
+	if updateNow then self.update
+end function
+
+Transform.multiplyScale = function(scaleFactor, updateNow=true)
+	self.local.scale *= scaleFactor
+	self.markStale
+	if updateNow then self.update
+end function
+
 Transform.pprint = function(indent=0)
 	prs = self.local
 	s = self.name + "(local: " + [prs.x, prs.y, prs.rotation, prs.scale].join(", ")
