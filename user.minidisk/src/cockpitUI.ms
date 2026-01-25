@@ -13,11 +13,12 @@ pic = {}
 altSprites = []
 spdSprites = []
 uiSigns = []
+attitudeSprite = null
 
 init = function
 	if pic.len then return // already initialized
 	for name in ("capsuleInstPanel fuelBar stageNumbers stagePanelBlank " +
-	  "stagePanelDecoupler stagePanelFuel").split
+	  "stagePanelDecoupler stagePanelFuel attitudeSpinner").split
 		img = file.loadImage("/usr/pics/UI/" + name + ".png")
 		qa.assert img
 		pic[name] = img
@@ -65,6 +66,11 @@ init = function
 	spdS.x = 865
 	spdS.setSign "ms"
 
+	outer.attitudeSprite = new Sprite
+	attitudeSprite.image = pic.attitudeSpinner
+	attitudeSprite.x = panelLeft + 112
+	attitudeSprite.y = 640 - 176
+	displays.outerSprites.sprites.push attitudeSprite
 
 	displays.hudSprites.sprites.push altS
 	uiSigns.push altS
@@ -165,9 +171,7 @@ drawShipInfo = function(spd, alt)
 		finalSpd = spl[0] + "000"
 	end if
 
-	// Speed calculation
-
-	// Drawing stats
+	// Drawing speed
 	i = 0
 	for s in finalSpd
 		spdSprites[i].setNumber s
@@ -176,6 +180,9 @@ drawShipInfo = function(spd, alt)
 
 	uiSigns[1].setSign spdSign
 
+	// Update attitude indicator
+	angleToGround = atan(ship.pos[1], ship.pos[0])
+	attitudeSprite.rotation = (angleToGround - ship.angle) * 180/pi
 end function
 
 if locals == globals then
