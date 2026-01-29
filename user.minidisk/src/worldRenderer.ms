@@ -27,7 +27,7 @@ terrain3 = LookupTable.Make([0,0,0.4,0.4,1,1,1,1,0.6,0.6,0.6,0.5,0.4,0.3,0.2,0,0
 
 
 // Main scale control:
-scales = [10*cm, 25*cm, 50*cm, m, 3*m, 10*m, 30*m, 100*m, 300*m, km,
+scales = [5*cm, 10*cm, 25*cm, 50*cm, m, 3*m, 10*m, 30*m, 100*m, 300*m, km,
   3*km, 10*km, 30*km, 100*km, 300*km, 1000*km]
 scaleIdx = 0
 pixelScale = scales[scaleIdx]  // m per pixel
