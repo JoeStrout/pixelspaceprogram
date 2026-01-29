@@ -46,9 +46,33 @@ mainLoop = function
 			else if k == "," or k == "<" then
 				if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
 			else if k == "+" or k == "=" then
+				dp = worldRenderer.screenToWorld([derp.x, derp.y])
+				rv = worldRenderer.screenToWorld([rover.x, rover.y])
+
 				worldRenderer.zoomIn
+
+				dp = worldRenderer.worldToScreen(dp)
+				rv = worldRenderer.worldToScreen(rv)
+
+				derp.x = dp[0]
+				derp.y = dp[1]
+
+				rover.x = rv[0]
+				rover.y = rv[1]
 			else if k == "-" or k == "_" then
+				dp = worldRenderer.screenToWorld([derp.x, derp.y])
+				rv = worldRenderer.screenToWorld([rover.x, rover.y])
+
 				worldRenderer.zoomOut
+
+				dp = worldRenderer.worldToScreen(dp)
+				rv = worldRenderer.worldToScreen(rv)
+
+				derp.x = dp[0]
+				derp.y = dp[1]
+
+				rover.x = rv[0]
+				rover.y = rv[1]
 			end if
 		end if
 		
