@@ -3,6 +3,7 @@ ensureImport "CircleCollider"
 ensureImport "miscUtils"
 ensureImport "orbit"
 ensureImport "worldRenderer"
+ensureImport "LookupTable"
 
 mu_planet = orbit.mu_planet
 
@@ -50,7 +51,8 @@ Derp.cols = []
 Derp.planet = null
 
 Derp.init = function(x, y, rad=18)
-	//self.pos= [x, y]
+	self.x = x
+	self.y = y
 
 	self.vel = [0, 0]
 
@@ -61,7 +63,6 @@ Derp.init = function(x, y, rad=18)
 end function
 
 Derp.update = function(dt, pixelScale)
-	self.pos = xyList(self)
 
 	if self.inControl then
 		xmov = key.axis("Horizontal")
@@ -107,8 +108,20 @@ Derp.update = function(dt, pixelScale)
 			self.currAnim = self.idleAnim
 		end if
 
-		closestPoint = []
-		for i in range(0, self.cols.len-1)
+		closestPoint = [0, 0]
+
+		//terrainX = []
+		//for x in self.cols[1:-2]
+		//	terrainX.push x[1]
+		//end for
+//
+		//terrainLUT = LookupTable.Make(terrainX)
+//
+		//idx = terrainX.len * (self.x - terrainX[0]) / (terrainX[-1] - terrainX[0])
+//
+		//groundY = terrainLUT.lookup(idx)
+
+		for i in range(45, 55)
 			p = xyList(self)
 
 			if closestPoint.len > 0 then
@@ -119,15 +132,16 @@ Derp.update = function(dt, pixelScale)
 					closestPoint = self.cols[i]
 				end if
 			else
-				closestPoint = self.cols[i]
+				closestPoint = self.cols[45]
 			end if
 		end for
 
-		if closestPoint.len > 1 then
-			if (self.y - self.image.height * self.scale[1] * 0.5) < closestPoint[1] and self.vel[1] < 0 then
+		if closestPoint.len > 0 then
+			groundY = closestPoint[1]
+			if (self.y - self.image.height * self.scale[1] * 0.5) < groundY and self.vel[1] < 0 then
 				self.grounded = true
-				ty =  closestPoint[1] + self.image.height * self.scale[1] * 0.5
-				self.y = mathUtil.lerp(self.y, ty, 50 * dt)
+				ty = groundY + self.image.height * self.scale[1] * 0.5
+				self.y = mathUtil.lerp(self.y, ty, 25 *dt)
 				self.vel[1] = 0
 			else
 				self.grounded = false
@@ -137,19 +151,27 @@ Derp.update = function(dt, pixelScale)
 		pos = worldRenderer.screenToWorld(xyList(self))
 		angle = worldRenderer.worldToScreen([0,0]).angleTo(pos)
 
-		angledVel = [0, 0]
-		angledVel[0] = self.vel[0]
-		angledVel[1] = self.vel[1]
 
 		self.rotation = -angle + 90
 
-		// simple walking animation with rotation
-		self.rotation += cos(time * 20) * 8 * xmov
+		// Extra checks here to avoid calculations when not necesary
 
-		angledVel.rotate -angle+90
+		if xmov != 0 then
+			// simple walking animation with rotation
+			self.rotation += cos(time * 20) * 8 * xmov
+		end if
 
-		self.x += angledVel[0] * dt / pixelScale
-		self.y += angledVel[1] * dt / pixelScale
+		angledVel = [0, 0]
+		if self.vel[0] != 0 then angledVel[0] = self.vel[0]
+		if self.vel[1] != 0 then angledVel[1] = self.vel[1]
+
+		if angledVel[0] != 0 or angledVel[1] != 0 then
+			angledVel.rotate -angle+90
+		end if
+
+		
+		if angledVel[0] != 0 then self.x += angledVel[0] / pixelScale * dt
+		if angledVel[1] != 0 then self.y += angledVel[1] / pixelScale * dt
 	else
 		if self.rover then
 			self.vel[0] = 0

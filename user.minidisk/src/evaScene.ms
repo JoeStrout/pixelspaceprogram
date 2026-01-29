@@ -4,24 +4,26 @@ ensureImport "worldRenderer"
 ensureImport "DerpClass"
 ensureImport "Rover"
 
+import "listUtil"
+
 setup = function
 	clear
 
 	displays.setup
 	worldRenderer.setup
-	worldRenderer.refScreenPos = [480,320]
+	worldRenderer.refScreenPos = [480,400]
 	worldRenderer.zoomToScaleIdx 3
 
 	globals.derp = new Derp
 	derp.calculateScale worldRenderer.pixelScale
 
-	//globals.rover = new Rover.rover
-	//rover.x = 480; rover.y = 320
-	//rover.init
+	globals.rover = new Rover.rover
+	rover.x = 480; rover.y = 320
+	rover.init
+	rover.calculateScale worldRenderer.pixelScale
 
-	//xy = worldRenderer.screenToWorld([480, 320])
-	derp.init 480, 320
-	//derp.rover = rover
+	derp.init 480, 200
+	derp.rover = rover
 
 	display(2).mode = displayMode.pixel
 	display(2).clear
@@ -53,25 +55,17 @@ mainLoop = function
 		if key.pressed("escape") then break
 
 		derp.calculateScale worldRenderer.pixelScale
-		//rover.calculateScale worldRenderer.pixelScale
+		rover.calculateScale worldRenderer.pixelScale
 
 		derp.cols = worldRenderer.visiblePoly
+		rover.cols = worldRenderer.visiblePoly
 
 		if timeScale > 0 then 
 			derp.update timeScale/60, worldRenderer.pixelScale
-			//rover.update timeScale/60
+			rover.update timeScale/60, worldRenderer.pixelScale
 		end if
 
-		if derp.inControl then
-			//worldRenderer.rocketPos = derp.pos
-		end if
-
-		worldRenderer.drawWorld worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
-
-		//rover.leftWheel.cols = worldRenderer.visiblePoly
-		//rover.rightWheel.cols = worldRenderer.visiblePoly
-
-
+		worldRenderer.drawWorld// worldRenderer.refScreenPos, [-worldRenderer.rocketPos[0], -worldRenderer.rocketPos[1]]
 	end while
 	key.clear
 end function
@@ -79,5 +73,5 @@ end function
 if locals == globals then
 	setup
 	mainLoop
-	clear
+
 end if
