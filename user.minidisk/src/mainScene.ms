@@ -60,8 +60,10 @@ mainLoop = function
 			k = key.get
 			if (k == "." or k == ">") and timeScale < 256 then
 				if timeScale > 0 then globals.timeScale *= 2 else globals.timeScale = 1
+				cockpitUI.drawTimeScale timeScale
 			else if k == "," or k == "<" then
 				if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
+				cockpitUI.drawTimeScale timeScale
 			else if k == "+" or k == "=" then
 				worldRenderer.zoomIn
 			else if k == "-" or k == "_" then

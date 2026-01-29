@@ -7,6 +7,7 @@ ensureImport "qa"
 ensureImport "displays"
 ensureImport "UINumber"
 ensureImport "UISigns"
+ensureImport "TimeScaleNumber"
 
 pic = {}
 
@@ -78,6 +79,13 @@ init = function
 	displays.hudSprites.sprites.push spdS
 	uiSigns.push spdS
 
+	outer.timeScaleNumber = new TimeScaleNumber.TSN
+	timeScaleNumber.x = panelLeft + 136
+	timeScaleNumber.y = 272
+	displays.hudSprites.sprites.push timeScaleNumber
+
+	// default time scale is 1 
+	outer.drawTimeScale 1
 end function
 
 
@@ -99,6 +107,14 @@ draw = function(demoMode=false)
 	for i in range(1, 8)
 		drawStagePanel i
 	end for
+end function
+
+drawTimeScale = function(ts)
+	if ts == 0 then
+		timeScaleNumber.setNumber 0
+	else
+		timeScaleNumber.setNumber log(ts, 2) + 1
+	end if
 end function
 
 drawShipInfo = function(spd, alt)
