@@ -5,9 +5,11 @@ import "importUtil"
 ensureImport "spacecraft"
 ensureImport "qa"
 ensureImport "displays"
+ensureImport "DSL"
 ensureImport "UINumber"
 ensureImport "UISigns"
 ensureImport "TimeScaleNumber"
+ensureImport "SpriteButton"
 
 pic = {}
 
@@ -15,6 +17,7 @@ altSprites = []
 spdSprites = []
 uiSigns = []
 attitudeSprite = null
+uiButtons = []
 
 init = function
 	if pic.len then return // already initialized
@@ -83,6 +86,30 @@ init = function
 	timeScaleNumber.x = panelLeft + 136
 	timeScaleNumber.y = 272
 	displays.hudSprites.sprites.push timeScaleNumber
+
+	// Plus Time Scale
+	pts = new SpriteButton.SB
+	pts.image = file.loadImage("/usr/pics/UI/timescale/up_arrow.png")
+	pts.action = function
+		if timeScale > 0 then globals.timeScale *= 2 else globals.timeScale = 1
+		cockpitUI.drawTimeScale timeScale
+	end function
+	pts.init 96, 272
+
+	uiButtons.push pts
+	//displays.hudSprites.sprites.push pts
+
+	// Minus Time Scale
+	mts = new SpriteButton.SB
+	mts.image = file.loadImage("/usr/pics/UI/timescale/down_arrow.png")
+	mts.action = function
+		if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
+		cockpitUI.drawTimeScale timeScale
+	end function
+	mts.init panelLeft - 150, 272
+
+	uiButtons.push mts
+	//displays.hudSprites.sprites.push mts
 
 	// default time scale is 1 
 	outer.drawTimeScale 1

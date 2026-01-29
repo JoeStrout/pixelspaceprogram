@@ -9,6 +9,7 @@ ensureImport "spacecraft"
 ensureImport "gameData"
 ensureImport "worldRenderer"
 ensureImport "cockpitUI"
+ensureImport "DSL"
 
 setup = function
 	displays.setup
