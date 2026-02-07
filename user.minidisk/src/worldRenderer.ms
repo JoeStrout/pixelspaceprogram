@@ -328,6 +328,39 @@ camera = Transform.Make(0, worldRadiusAtAngle(pi/2)+25, 0, pixelScale, "camera")
 // rocketPos is kept for external compatibility; it's synced to camera in update()
 rocketPos = [camera.local.x, camera.local.y]
 
+// drawDebris: draw all non-player SpaceObjects using sprites with rotation.
+drawDebris = function
+	for obj in spaceObjects
+		if refEquals(obj, ship) then continue
+		if obj.crashed then
+			if obj.sprite then
+				displays.outerSprites.sprites.removeVal obj.sprite
+				obj.sprite = null
+			end if
+			continue
+		end if
+		// Lazily create a sprite for this object
+		if not obj.sprite then
+			obj.sprite = new Sprite
+			obj.sprite.image = null
+			obj.sprite.imageScale = 0.1  // m/pixel at which the image is created
+			displays.outerSprites.sprites.push obj.sprite
+		end if
+		screenPos = worldToScreen(obj.pos)
+		obj.sprite.x = screenPos[0]
+		obj.sprite.y = screenPos[1]
+		degrees = obj.angle * 180/pi - camera.local.rotation
+		obj.sprite.rotation = degrees
+		if pixelScale <= 1 then
+			obj.sprite.image = obj.image
+			obj.sprite.scale = obj.sprite.imageScale / pixelScale
+		else
+			obj.sprite.image = rocketRenderer.rocketIcon
+			obj.sprite.scale = 1
+		end if
+	end for
+end function
+
 setup = function
 	rocketRenderer.setup
 end function

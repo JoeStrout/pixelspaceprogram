@@ -310,6 +310,37 @@ Assembly.boundsRect = function
 	return r
 end function
 
+Assembly.recenter = function
+	// Shift all component positions so their mass-weighted center
+	// of gravity is at [0,0]. Returns the old COG offset (the amount
+	// that was subtracted from each component position).
+	totalMass = 0
+	cogX = 0; cogY = 0
+	for comp in self.components
+		m = comp.mass
+		totalMass += m
+		cogX += comp.pos[0] * m
+		cogY += comp.pos[1] * m
+	end for
+	if totalMass == 0 then
+		// Fall back to geometric center
+		for comp in self.components
+			cogX += comp.pos[0]
+			cogY += comp.pos[1]
+		end for
+		cogX = cogX / self.components.len
+		cogY = cogY / self.components.len
+	else
+		cogX = cogX / totalMass
+		cogY = cogY / totalMass
+	end if
+	for comp in self.components
+		comp.pos[0] -= cogX
+		comp.pos[1] -= cogY
+	end for
+	return [cogX, cogY]
+end function
+
 Assembly.getImage = function
 	// Return an image of this Assembly.  Note that this will be 
 	// oriented in the standard nose-up orientation; but if you
@@ -325,25 +356,133 @@ Assembly.getImage = function
 	return g.getImage
 end function
 
+Assembly.split = function(decouplerComp)
+	// Remove the decoupler from our components
+	idx = self.components.indexOf(decouplerComp)
+	qa.assert idx != null, "Could not find decouplerComp in Assembly.split"
+	if idx == null then return null
+	self.components.remove idx
+
+	// Break all attachments that reference the decoupler (on both sides)
+	for comp in self.components
+		comp.breakAttachment decouplerComp
+	end for
+
+	// Flood-fill from components[0] to find all connected components
+	if not self.components then return null
+	connected = [self.components[0]]
+	toDo = [self.components[0]]
+	while toDo
+		comp = toDo.pull
+		for atch in comp.attachPoints
+			otherComp = atch.attached
+			if not otherComp then continue
+			if connected.contains(otherComp) then continue
+			connected.push otherComp
+			toDo.push otherComp
+		end for
+	end while
+
+	// If everything is still connected, nothing to split
+	if connected.len == self.components.len then return null
+
+	// Components NOT in connected set go to a new Assembly
+	noob = Assembly.Make
+	for i in range(self.components.len - 1, 0, -1)
+		comp = self.components[i]
+		if connected.indexOf(comp) == null then
+			noob.components.push comp
+			self.components.remove i
+		end if
+	end for
+
+	if not noob.components then return null
+	return noob
+end function
+
 Assembly.update = function
 	for comp in self.components
 		comp.update
 	end for
 end function
 
+stack = function(parts)
+	// Build and return a new Assembly that has the given list of
+	// parts stacked vertically, where parts[0] is bottommost.
+	// The parts should be positioned so that they neatly touch,
+	// and are attached via their N and S attachment points.
+	// Finally, these should be inserted into the new assembly
+	// components list in reverse order, so asm.componenst[0] is
+	// the top (usually the capsule).
+	asm = Assembly.Make
+
+	// First pass: create components and stack them bottom-to-top
+	y = 0  // bottom edge of next part
+	for partDef in parts
+		comp = Component.Make(partDef)
+		h = partDef.image.height
+		comp.pos = [0, y + h/2]
+		asm.components.insert 0, comp
+		y += h
+	end for
+
+	// Second pass: create attachment points and connect adjacent parts
+	for i in range(0, asm.components.len - 2)
+		lower = asm.components[i]
+		upper = asm.components[i + 1]
+		lowerH = lower.partDef.image.height
+		upperH = upper.partDef.image.height
+		// N point on top of the lower part
+		nPt = AttachPoint.Make([0, lowerH/2], Dir.N)
+		nPt.attached = upper
+		lower.attachPoints.push nPt
+		// S point on bottom of the upper part
+		sPt = AttachPoint.Make([0, -upperH/2], Dir.S)
+		sPt.attached = lower
+		upper.attachPoints.push sPt
+	end for
+
+	// Third pass: shift all positions so 0,0 is at center of gravity
+	totalMass = 0
+	cogY = 0
+	for comp in asm.components
+		m = comp.mass
+		totalMass += m
+		cogY += comp.pos[1] * m
+	end for
+	if totalMass > 0 then cogY = cogY / totalMass
+	for comp in asm.components
+		comp.pos[1] -= cogY
+	end for
+
+	return asm
+end function
+
 standardTestRocket = function
 	// Build and return the our standard test rocket assembly.
+
+	// ToDo: replace the following code...
 	asm = Assembly.Make
 	
 	part = Component.Make(gameData.parts.ruckus)
 	part.pos = [0, -61+100]
 	asm.components.push part
 	
+	part = Component.Make(gameData.parts.decouplerS)
+	part.pos = [0, -61+100]
+	asm.components.push part
+	
 	part = Component.Make(gameData.parts.probeCore)
 	part.pos = [0, 100+100]
 	asm.components.push part
-	
-	// ToDo: actually attach the parts where their attachment points touch
+
+	// ...with just this:
+	asm = stack([
+		gameData.parts.ruckus,
+		gameData.parts.decouplerS,
+		gameData.parts.ruckus,
+		gameData.parts.probeCore])
+		
 	return asm
 end function
 

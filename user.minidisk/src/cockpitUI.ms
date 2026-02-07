@@ -126,7 +126,8 @@ drawStagePanel = function(num1to8)
 		h = pic.fuelBar.height
 		g.drawImage pic.fuelBar, 21, 5, w, h, 0, 0, w, h
 	end if
-	g.drawImage pic.stageNums[num1to8], x+1, 3, -1, -1, 0, 0, -1, -1, "#AAAAAA"
+	if num1to8 == nextStageNum then c = "#CC4444" else c = "#AAAAAA"
+	g.drawImage pic.stageNums[num1to8], x+1, 3, -1, -1, 0, 0, -1, -1, c
 end function
 
 draw = function(demoMode=false)

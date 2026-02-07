@@ -56,13 +56,16 @@ PartDef.initFromData = function(data)
 	self.techNode = data["Tech Node"]
 	self.anchors = data.Anchors
 	self.massFlow = data["Mass Flow"]
-	m = data.Mass
-	if m.indexOf("-") != null then   // wet mass - dry mass
-		parts = m.split("-")
-		self.dryMass = parts[1].val
-		self.fuelMass = parts[0].val - self.dryMass
-	else
-		self.mass = m.val
+	self.mass = data.Mass
+	if self.mass isa string then
+		if self.mass.contains("-") then   // wet mass - dry mass
+			parts = self.mass.split("-")
+			self.dryMass = parts[1].val
+			self.fuelMass = parts[0].val - self.dryMass
+			self.mass = self.dryMass + self.fuelMass
+		else
+			self.mass = self.mass.val
+		end if
 	end if
 end function
 

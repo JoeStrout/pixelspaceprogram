@@ -1,4 +1,4 @@
-// This module simulates a spacecraft in freefall.
+// This module simulates spacecraft in freefall.
 
 import "importUtil"
 ensureImport "orbit"
@@ -34,29 +34,118 @@ Stage.Make = function(type)
 	return noob
 end function
 
-// Craft: represents the whole spacecraft.
-globals.Craft = {}
-Craft.assembly = null	// Assembly of parts comprising this craft
-Craft.mass = 1000		// craft mass, in kg
-Craft.pos = null		// [x,y] position in meters relative to planet
-Craft.vel = null		// [vx, vy] velocity in meters/sec
-Craft.angle = 0			// rotation angle in radians
-Craft.angVec = 0		// angular velocity, in radians/sec
+// Global list of all active SpaceObjects (including the player's Craft)
+globals.spaceObjects = []
+
+// SpaceObject: a physics-bearing object with an assembly, position, velocity,
+// and orbit. Base class for Craft and any detached debris/stages.
+globals.SpaceObject = {}
+SpaceObject.assembly = null		// Assembly of parts
+SpaceObject.pos = null			// [x,y] position in meters relative to planet
+SpaceObject.vel = null			// [vx,vy] velocity in meters/sec
+SpaceObject.angle = 0			// rotation angle in radians
+SpaceObject.angVec = 0			// angular velocity, in radians/sec
+SpaceObject.orbit = null
+SpaceObject.mass = 1000
+SpaceObject._cachedImage = null
+SpaceObject.sprite = null		// Sprite for rendering (created lazily)
+SpaceObject.launched = true		// debris is always "launched" (in free flight)
+SpaceObject.crashed = false
+
+SpaceObject.Make = function(assembly, pos, vel, angle=0)
+	noob = new self
+	noob.assembly = assembly
+	noob.pos = pos[:]
+	noob.vel = vel[:]
+	noob.angle = angle
+	noob.computeMass
+	noob.updateOrbit
+	return noob
+end function
+
+SpaceObject.image = function
+	if self._cachedImage == null then
+		self._cachedImage = self.assembly.getImage
+		self._cachedImage.rotate -90
+	end if
+	return self._cachedImage
+end function
+
+SpaceObject.updateOrbit = function
+	if self.orbit == null then self.orbit = new Orbit2D
+	self.orbit.compute self.pos, self.vel, mu_planet
+end function
+
+SpaceObject.computeMass = function
+	self.mass = 0
+	for comp in self.assembly.components
+		self.mass += comp.mass
+	end for
+end function
+
+SpaceObject.update = function(dt)
+	if self.crashed then return
+
+	// Calculate gravity
+	r = sqrt(self.pos[0]^2 + self.pos[1]^2)
+	g = mu_planet / r^2
+	gDir = [-self.pos[0], -self.pos[1]]
+	gDir.normalize
+
+	if self.launched then
+		acc = [gDir[0] * g, gDir[1] * g]
+	else
+		acc = [0, 0]
+	end if
+
+	// Integrate to update state
+	self.vel[0] += acc[0] * dt
+	self.vel[1] += acc[1] * dt
+	self.pos[0] += self.vel[0] * dt
+	self.pos[1] += self.vel[1] * dt
+	self.angle += self.angVec * dt
+
+	// Check for ground collision
+	upAngle = atan(self.pos.y, self.pos.x)
+	groundR = worldRenderer.worldRadiusAtAngle(upAngle)
+	alt = sqrt(self.pos.x^2 + self.pos.y^2) - groundR
+	if self.launched and alt <= 0 then
+		self.pos = self.pos.normalized.times(groundR)
+		speed = self.vel.magnitude
+		if speed > 20 then
+			self.crashed = true
+			return
+		end if
+		self.launched = false
+	end if
+
+	// Lock to orbit radius when coasting
+	if self.orbit and self.orbit.isValid then
+		orbitR = self.orbit.radiusAtGlobalAngle(atan(self.pos[1], self.pos[0]))
+		currentR = sqrt(self.pos[0]^2 + self.pos[1]^2)
+		factor = orbitR / currentR
+		self.pos[0] *= factor; self.pos[1] *= factor
+	end if
+end function
+
+
+// Craft: the player's spacecraft. Inherits from SpaceObject, adding
+// throttle, staging, engine sound, and thrust physics.
+globals.Craft = new SpaceObject
 Craft.throttle = 0		// current throttle (0-1)
-Craft.thrusting = false // true when main engines actually burning
-Craft.orbit = null
+Craft.thrusting = false	// true when main engines actually burning
 Craft.engineSound = engineSound
-Craft._cachedImage = null
 Craft.stages = null
 Craft.alt = 0
 Craft.speed = 0
 Craft.groundR = 0
 Craft.launched = false	// false: on launch pad; true: flyin' free
-Craft.crashed = false	// true: kaboom
 
 Craft.Make = function(assembly)
 	craft = new self
 	craft.assembly = assembly
+	craft.pos = [0, 0]
+	craft.vel = [0, 0]
 	// For now, hard-coding the stages; ToDo: calculate from assembly
 	craft.stages = [null]
 	for i in range(1,8)
@@ -68,48 +157,38 @@ Craft.Make = function(assembly)
 			craft.stages.push Stage.Make(StageType.NONE)
 		end if
 	end for
+	craft.computeMass
+	globals.spaceObjects.push craft
 	return craft
 end function
 
-Craft.image = function
-	if self._cachedImage == null then
-		self._cachedImage = self.assembly.getImage
-		self._cachedImage.rotate -90
-	end if
-	return self._cachedImage
-end function
-
-Craft.updateOrbit = function
-	if self.orbit == null then self.orbit = new Orbit2D
-	self.orbit.compute self.pos, self.vel, mu_planet
-end function
-
 Craft.update = function(dt)
-	if self.crashed then
-		// ToDo: update explosion effects?
-		return
-	end if
-	
-	// calculate total acceleration (gravity plus thrust)
+	if self.crashed then return
+
+	// Calculate gravity
 	r = sqrt(self.pos[0]^2 + self.pos[1]^2)
-	g = mu_planet / r^2  // acceleration due to gravity, in m/sec^2
+	g = mu_planet / r^2
 	gDir = [-self.pos[0], -self.pos[1]]
 	gDir.normalize
-	
+
+	engineComp = null
 	if self.throttle > 0 then
+		// HACK for now: assume the last component is our engine,
+		// and that corresponds to stage 1.
+		if self.assembly.components[-1].partDef isa EngineDef then
+			engineComp = self.assembly.components[-1]
+			engineDef = engineComp.partDef	
+			stageNum = 1
+		end if
+	end if
+		
+	if engineComp then	
 		self.thrusting = true
 		self.launched = true
-		
-		// HACK for now: assume component 0 is our engine,
-		// and that corresponds to stage 1.
-		engineComp = self.assembly.components[0]
-		engineDef = engineComp.partDef
-		qa.assert engineDef isa EngineDef
-		stageNum = 1
-		
+
 		// Also HACK for now: assume 0.5 atm pressure
 		atmPressure = 0.5
-		
+
 		thrustN = engineDef.thrust(self.throttle, atmPressure)
 		engineComp.fuelMass -= engineDef.massFlow * self.throttle * dt
 		if engineComp.fuelMass < 0 then
@@ -119,13 +198,10 @@ Craft.update = function(dt)
 		else
 			ship.stages[stageNum].fuelPct = engineComp.fuelPct
 			cockpitUI.drawStagePanel stageNum
-		end if		
-		
-		self.mass = 0
-		for comp in self.assembly.components
-			self.mass += comp.mass
-		end for
-		
+		end if
+
+		self.computeMass
+
 		fwdDir = [cos(self.angle), sin(self.angle)]
 		thrustAcc = thrustN / self.mass
 		acc = [
@@ -139,19 +215,19 @@ Craft.update = function(dt)
 		self.thrusting = false
 		acc = [0, 0]
 	end if
-	
-	// then integrate to update our state
+
+	// Integrate to update state
 	self.vel[0] += acc[0] * dt
 	self.vel[1] += acc[1] * dt
 	self.pos[0] += self.vel[0] * dt
 	self.pos[1] += self.vel[1] * dt
 	self.angle += self.angVec * dt
-	
-	// store speed and altitude, and check for crashing into the ground
+
+	// Store speed and altitude, and check for crashing into the ground
 	self.upAngle = atan(self.pos.y, self.pos.x)
 	self.groundR = worldRenderer.worldRadiusAtAngle(self.upAngle)
 	self.alt = sqrt(self.pos.x^2 + self.pos.y^2) - self.groundR
-	self.speed = ship.vel.magnitude
+	self.speed = self.vel.magnitude
 	if self.launched and self.alt <= 0 then
 		self.engineSound.stop
 		self.pos = self.pos.normalized.times(self.groundR)
@@ -162,20 +238,67 @@ Craft.update = function(dt)
 		self.launched = false	// landed!
 	end if
 
-	// and if we're under thrust, update the orbit; otherwise,
-	// lock to the orbit radius
+	// If under thrust, update orbit; otherwise lock to orbit radius
 	if self.thrusting then
 		self.updateOrbit
 		if not self.engineSound.isPlaying then self.engineSound.play
 	else
 		if self.engineSound.isPlaying then self.engineSound.stop
-		if self.orbit.isValid then
+		if self.orbit and self.orbit.isValid then
 			orbitR = self.orbit.radiusAtGlobalAngle(atan(self.pos[1], self.pos[0]))
 			currentR = sqrt(self.pos[0]^2 + self.pos[1]^2)
 			factor = orbitR / currentR
 			self.pos[0] *= factor; self.pos[1] *= factor
 		end if
 	end if
+end function
+
+Craft.activateDecoupler = function(decouplerComp)
+	newAsm = self.assembly.split(decouplerComp)
+	if not newAsm then return null
+
+	// Recenter both sub-assemblies and get their old COG offsets
+	// (in component/pixel space, where +Y = nose direction).
+	// Multiply by imageScale (0.1 m/pixel) to convert to meters.
+	imgScale = 0.1  // meters per pixel (matches rocketRenderer.imageScale)
+	shipOffset = self.assembly.recenter
+	debrisOffset = newAsm.recenter
+	origPos = self.pos[:]
+
+	// Convert component-space offsets to world-space offsets.
+	// Component +Y (nose) maps to world [cos(angle), sin(angle)]
+	cosA = cos(self.angle); sinA = sin(self.angle)
+	shipCx = shipOffset[0] * imgScale; shipCy = shipOffset[1] * imgScale
+	debCx = debrisOffset[0] * imgScale; debCy = debrisOffset[1] * imgScale
+	shipWorldDx = -shipCx * sinA + shipCy * cosA
+	shipWorldDy =  shipCx * cosA + shipCy * sinA
+	debrisWorldDx = -debCx * sinA + debCy * cosA
+	debrisWorldDy =  debCx * cosA + debCy * sinA
+
+	// Adjust ship world position
+	self.pos[0] = origPos[0] + shipWorldDx
+	self.pos[1] = origPos[1] + shipWorldDy
+
+	// Create debris at its correct world position
+	debrisPos = [origPos[0] + debrisWorldDx, origPos[1] + debrisWorldDy]
+	debris = SpaceObject.Make(newAsm, debrisPos, self.vel, self.angle)
+
+	// Add a small separation velocity along the nose axis
+	sepSpeed = 2  // m/s
+	fwd = [cosA, sinA]
+	debris.vel[0] -= fwd[0] * sepSpeed
+	debris.vel[1] -= fwd[1] * sepSpeed
+	self.vel[0] += fwd[0] * sepSpeed * 0.1
+	self.vel[1] += fwd[1] * sepSpeed * 0.1
+
+	debris.updateOrbit
+	self.updateOrbit
+
+	globals.spaceObjects.push debris
+	self._cachedImage = null
+	self.computeMass
+
+	return debris
 end function
 
 drawInfo = function(craft, timeScale)
@@ -193,7 +316,7 @@ drawInfo = function(craft, timeScale)
 	dotPos = speedStr.indexOf(".")
 	speedStr = speedStr[dotPos-6:dotPos+4]
 	text.row = 24; text.column = 25; print "SPD: " + speedStr + " m/s"
-	text.row = 0; text.column = 52; 
+	text.row = 0; text.column = 52;
 	if timeScale > 0 then
 		print "TIME WARP: " + timeScale + "X", ""
 	else
@@ -255,18 +378,18 @@ demo = function
 		else if key.pressed("right") then
 			ship.angle -= pi/60
 		end if
-		
+
 		if key.pressed("escape") then break
-		
+
 		// update simulation
 		ship.update timeScale/60
-		
+
 		// update rocket display
-		worldRenderer.rocketSprite.rotation = ship.angle * 180/pi	
+		worldRenderer.rocketSprite.rotation = ship.angle * 180/pi
 		worldRenderer.rocketPos = ship.pos
 		worldRenderer.update
 		worldRenderer.drawOrbit ship.orbit
-		
+
 		drawInfo ship, timeScale
 	end while
 	key.clear
