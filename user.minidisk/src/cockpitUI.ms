@@ -18,6 +18,9 @@ pic = {}
 
 altSprites = []
 spdSprites = []
+hourSprites = []
+minuteSprites = []
+secondSprites = []
 uiSigns = []
 attitudeSprite = null
 uiButtons = []
@@ -46,21 +49,25 @@ init = function
 	
 	outer.panelLeft = 960 - pic.capsuleInstPanel.width
 
-	// Setting up numbers for altitude and speed
+	// Setting up numbers for altitude, speed, and time display
 	for i in range(0, 5)
-		num = new UINumber.Number
-		num.y = 618
-		num.x = 754 + (17 * i) + (8 * (i >= 3))
-		displays.hudSprites.sprites.push num
-		outer.altSprites.push num
+		x = panelLeft + 18 + (17 * i) + (8 * (i >= 3))
+		altSprites.push UINumber.Number.Make(x, 618)
 	end for
 
 	for i in range(0, 5)
-		num = new UINumber.Number
-		num.y = 582
-		num.x = 754 + (17 * i) + (8 * (i >= 3))
-		displays.hudSprites.sprites.push num
-		outer.spdSprites.push num
+		x = panelLeft + 18 + (17 * i) + (8 * (i >= 3))
+		spdSprites.push UINumber.Number.Make(x, 582)
+	end for
+	
+	for i in range(0,3)
+		x = panelLeft + 66 + i*17
+		hourSprites.push UINumber.Number.Make(x, 315)
+		if i > 1 then continue
+		x = panelLeft + 143 + i*17
+		minuteSprites.push UINumber.Number.Make(x, 315)
+		x = panelLeft + 186 + i*17
+		secondSprites.push UINumber.Number.Make(x, 315)
 	end for
 
 	altS = new UISigns.Sign
@@ -94,6 +101,7 @@ init = function
 
 	pts = SpriteButton.Make("/usr/pics/UI/timescale/up_arrow.png", 
 	  960 - 8 - 32/2, 272, ".")
+	pts.helpText = "[.] Faster"
 	pts.action = function
 		if timeScale < 256 then globals.timeScale *= 2
 		if timeScale < 1 then globals.timeScale = 1
@@ -105,6 +113,7 @@ init = function
 	
 	mts = SpriteButton.Make("/usr/pics/UI/timescale/down_arrow.png",
 	  panelLeft + 56 + 32/2, 272, ",")
+	mts.helpText = "[.] Slower"
 	mts.action = function
 		if timeScale > 1 then
 			globals.timeScale /= 2
@@ -117,6 +126,24 @@ init = function
 		cockpitUI.drawTimeScale timeScale
 	end function
 	displays.hudSprites.sprites.push mts
+
+
+	// Map scale controls
+	btn = SpriteButton.Make("/usr/pics/UI/timescale/up_arrow.png", 
+	  960 - 8 - 32/2, 222, ["+", "="])
+	btn.helpText = "[+] Zoom In"
+	btn.action = function
+		worldRenderer.zoomIn
+	end function
+	displays.hudSprites.sprites.push btn
+	
+	btn = SpriteButton.Make("/usr/pics/UI/timescale/down_arrow.png",
+	  panelLeft + 56 + 32/2, 222, ["-", "_"])
+	btn.helpText = "[-] Zoom Out"
+	btn.action = function
+		worldRenderer.zoomOut
+	end function
+	displays.hudSprites.sprites.push btn
 
 	// default time scale is 1 
 	outer.drawTimeScale 1
@@ -150,6 +177,20 @@ drawTimeScale = function(ts)
 	else
 		timeScaleNumber.setNumber log(ts, 2) + 1
 	end if
+end function
+
+drawTime = function(t)
+	sec = t % 60
+	min = floor(t / 60)
+	hr = floor(t / 3600)
+	hourSprites[0].setNumber floor(hr / 1000) % 10
+	hourSprites[1].setNumber floor(hr / 100) % 10
+	hourSprites[2].setNumber floor(hr / 10) % 10
+	hourSprites[3].setNumber hr % 10
+	minuteSprites[0].setNumber floor(min/10) % 10
+	minuteSprites[1].setNumber min % 10
+	secondSprites[0].setNumber floor(sec/10) % 10
+	secondSprites[1].setNumber sec % 10
 end function
 
 drawShipInfo = function(spd, alt)

@@ -85,6 +85,7 @@ setup = function
 
 	globals.timeScale = 1
 	globals.nextStageNum = 2
+	globals.worldTime = 0
 end function
 
 mainLoop = function
@@ -137,6 +138,7 @@ mainLoop = function
 		// update simulation for all space objects
 		if timeScale > 0 then
 			dt = timeScale/60
+			globals.worldTime += dt
 			for obj in spaceObjects
 				obj.update dt
 			end for
@@ -160,6 +162,7 @@ mainLoop = function
 		worldRenderer.drawDebris
 
 		cockpitUI.drawShipInfo ship.speed, ship.alt
+		cockpitUI.drawTime worldTime
 	end while
 	key.clear
 end function

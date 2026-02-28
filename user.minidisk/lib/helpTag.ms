@@ -10,6 +10,8 @@ sprite = null
 
 show = function(helpText, x, y)
 	w = helpText.len * 8 + 4
+	if x - w/2 < 0 then x = w/2
+	if x + w/2 > 960 then x = 960 - w/2
 	h = 16
 	disp = new PixelDisplay
 	disp.clear "#FFFFAA", w, h
