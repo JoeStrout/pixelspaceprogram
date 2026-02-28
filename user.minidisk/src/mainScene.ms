@@ -90,6 +90,8 @@ end function
 mainLoop = function
 	while true
 		yield
+		SpriteButton.UpdateAll
+		
 		// check inputs
 		if key.pressed("left shift") or key.pressed("right shift") then
 			ship.throttle = 1
@@ -100,12 +102,12 @@ mainLoop = function
 			k = key.get
 			if k == " " then
 				fireNextStage
-			else if (k == "." or k == ">") and timeScale < 256 then
-				if timeScale > 0 then globals.timeScale *= 2 else globals.timeScale = 1
-				cockpitUI.drawTimeScale timeScale
-			else if k == "," or k == "<" then
-				if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
-				cockpitUI.drawTimeScale timeScale
+//			else if (k == "." or k == ">") and timeScale < 256 then
+//				if timeScale > 0 then globals.timeScale *= 2 else globals.timeScale = 1
+//				cockpitUI.drawTimeScale timeScale
+//			else if k == "," or k == "<" then
+//				if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
+//				cockpitUI.drawTimeScale timeScale
 			else if k == "+" or k == "=" then
 				worldRenderer.zoomIn
 			else if k == "-" or k == "_" then
@@ -115,6 +117,7 @@ mainLoop = function
 			else if k == "]" or k == "}" then
 				worldRenderer.camera.rotate -15
 			end if
+			SpriteButton.HandleKeyAll k
 		end if
 		// Rotation is tricky -- if we simulate this realistically, while the
 		// time scale is 10X or more, it's completely uncontrollable!  So for

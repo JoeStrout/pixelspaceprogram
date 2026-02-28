@@ -10,6 +10,9 @@ ensureImport "UINumber"
 ensureImport "UISigns"
 ensureImport "TimeScaleNumber"
 ensureImport "SpriteButton"
+ensureImport "sounds"
+
+sounds.init
 
 pic = {}
 
@@ -70,46 +73,50 @@ init = function
 	spdS.x = 865
 	spdS.setSign "ms"
 
-	outer.attitudeSprite = new Sprite
-	attitudeSprite.image = pic.attitudeSpinner
-	attitudeSprite.x = panelLeft + 112
-	attitudeSprite.y = 640 - 176
-	displays.outerSprites.sprites.push attitudeSprite
-
 	displays.hudSprites.sprites.push altS
 	uiSigns.push altS
 
 	displays.hudSprites.sprites.push spdS
 	uiSigns.push spdS
 
+	// Attitude display (shows angle relative to the nearest ground)
+	outer.attitudeSprite = new Sprite
+	attitudeSprite.image = pic.attitudeSpinner
+	attitudeSprite.x = panelLeft + 112
+	attitudeSprite.y = 640 - 176
+	displays.outerSprites.sprites.push attitudeSprite
+
+	// Time controls
 	outer.timeScaleNumber = new TimeScaleNumber.TSN
 	timeScaleNumber.x = panelLeft + 136
 	timeScaleNumber.y = 272
 	displays.hudSprites.sprites.push timeScaleNumber
 
-	// Plus Time Scale
-	pts = new SpriteButton.SB
-	pts.image = file.loadImage("/usr/pics/UI/timescale/up_arrow.png")
+	pts = SpriteButton.Make("/usr/pics/UI/timescale/up_arrow.png", 
+	  960 - 8 - 32/2, 272, ".")
 	pts.action = function
-		if timeScale > 0 then globals.timeScale *= 2 else globals.timeScale = 1
+		if timeScale < 256 then globals.timeScale *= 2
+		if timeScale < 1 then globals.timeScale = 1
 		cockpitUI.drawTimeScale timeScale
+		f = 1.5 ^ (log(timeScale)/log(2))
+		sounds.playFreqSweep 25.55 * f, 49 * f
 	end function
-	pts.init 96, 272
-
-	uiButtons.push pts
-	//displays.hudSprites.sprites.push pts
-
-	// Minus Time Scale
-	mts = new SpriteButton.SB
-	mts.image = file.loadImage("/usr/pics/UI/timescale/down_arrow.png")
+	displays.hudSprites.sprites.push pts
+	
+	mts = SpriteButton.Make("/usr/pics/UI/timescale/down_arrow.png",
+	  panelLeft + 56 + 32/2, 272, ",")
 	mts.action = function
-		if timeScale > 1 then globals.timeScale /= 2 else globals.timeScale = 0
+		if timeScale > 1 then
+			globals.timeScale /= 2
+			f = 1.5 ^ (log(timeScale)/log(2))
+			sounds.playFreqSweep 49 * f, 25.55 * f
+		else
+			globals.timeScale = 0
+			sounds.pauseSound.play
+		end if
 		cockpitUI.drawTimeScale timeScale
 	end function
-	mts.init panelLeft - 150, 272
-
-	uiButtons.push mts
-	//displays.hudSprites.sprites.push mts
+	displays.hudSprites.sprites.push mts
 
 	// default time scale is 1 
 	outer.drawTimeScale 1
