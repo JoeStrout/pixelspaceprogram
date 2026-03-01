@@ -4,6 +4,7 @@ frames = []
 for i in range(0, 9)
 	frames.push file.loadImage("/usr/pics/UI/numbers/" + i + ".png")
 end for
+minusFrame = file.loadImage("/usr/pics/UI/numbers/minus.png")
 
 Number = new Sprite
 Number.image = frames[0]
@@ -14,6 +15,13 @@ Number.setNumber = function(num)
 	self.image = frames[num]
 end function
 
+Number.setMinus = function
+	self.image = minusFrame
+end function
+
+Number.setOff = function
+	self.image = null
+end function
 
 Number.Make = function(x, y)
 	noob = new Number

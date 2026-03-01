@@ -18,6 +18,7 @@ pic = {}
 
 altSprites = []
 spdSprites = []
+attitudeSprites = []
 hourSprites = []
 minuteSprites = []
 secondSprites = []
@@ -49,25 +50,23 @@ init = function
 	
 	outer.panelLeft = 960 - pic.capsuleInstPanel.width
 
-	// Setting up numbers for altitude, speed, and time display
+	// Setting up numbers for altitude, speed, attitude, and time display
 	for i in range(0, 5)
 		x = panelLeft + 18 + (17 * i) + (8 * (i >= 3))
 		altSprites.push UINumber.Number.Make(x, 618)
-	end for
-
-	for i in range(0, 5)
 		x = panelLeft + 18 + (17 * i) + (8 * (i >= 3))
 		spdSprites.push UINumber.Number.Make(x, 582)
 	end for
 	
 	for i in range(0,3)
-		x = panelLeft + 66 + i*17
-		hourSprites.push UINumber.Number.Make(x, 315)
+		attitudeSprites.push UINumber.Number.Make(panelLeft + 86 + (17*i), 537)
+	end for
+
+	for i in range(0,3)
+		hourSprites.push UINumber.Number.Make(panelLeft + 66 + i*17, 315)
 		if i > 1 then continue
-		x = panelLeft + 143 + i*17
-		minuteSprites.push UINumber.Number.Make(x, 315)
-		x = panelLeft + 186 + i*17
-		secondSprites.push UINumber.Number.Make(x, 315)
+		minuteSprites.push UINumber.Number.Make(panelLeft + 143 + i*17, 315)
+		secondSprites.push UINumber.Number.Make(panelLeft + 186 + i*17, 315)
 	end for
 
 	altS = new UISigns.Sign
@@ -90,7 +89,7 @@ init = function
 	outer.attitudeSprite = new Sprite
 	attitudeSprite.image = pic.attitudeSpinner
 	attitudeSprite.x = panelLeft + 112
-	attitudeSprite.y = 640 - 176
+	attitudeSprite.y = 640 - 178
 	displays.outerSprites.sprites.push attitudeSprite
 
 	// Time controls
@@ -274,7 +273,19 @@ drawShipInfo = function(spd, alt)
 
 	// Update attitude indicator
 	angleToGround = atan(ship.pos[1], ship.pos[0])
-	attitudeSprite.rotation = (angleToGround - ship.angle) * 180/pi
+	angleDegrees = (angleToGround - ship.angle) * 180/pi % 360
+	attitudeSprite.rotation = angleDegrees
+	if angleDegrees > 180 then angleDegrees -= 360
+	if angleDegrees < -180 then angleDegrees += 360
+	if angleDegrees < 0 then
+		attitudeSprites[0].setMinus
+		angleDegrees = -angleDegrees
+	else
+		attitudeSprites[0].setOff
+	end if
+	attitudeSprites[1].setNumber floor(angleDegrees / 100) % 10
+	attitudeSprites[2].setNumber floor(angleDegrees / 10) % 10
+	attitudeSprites[3].setNumber angleDegrees % 10
 end function
 
 if locals == globals then
